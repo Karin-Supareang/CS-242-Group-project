@@ -1,0 +1,95 @@
+import uuid
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from models.category import Category
+from schemas.category import CategoryCreate, CategoryBase, Category as CategorySchema # Assuming you'll create these schemas
+
+class CategoryManager:
+    """
+    Class สำหรับจัดการ Business Logic และการเข้าถึงข้อมูลของ Category
+    """
+    def __init__(self, db: Session):
+        """
+        Constructor สำหรับ CategoryManager
+        :param db: SQLAlchemy Session สำหรับการเข้าถึงฐานข้อมูล
+        """
+        self._db = db
+
+    # Getter method
+    def get_category_by_id(self, category_id: str) -> Category | None:
+        """
+        ดึงข้อมูล Category จาก category_id
+        """
+        return self._db.query(Category).filter(Category.category_id == category_id).first()
+
+    # Getter method
+    def get_categories_by_user(self, user_id: str) -> list[Category]:
+        """
+        ดึงรายการ Category ทั้งหมดของ User ที่ระบุ
+        """
+        return self._db.query(Category).filter(Category.user_id == user_id).all()
+
+    # Business logic method (Create Category)
+    def create_category(self, user_id: str, category_data: CategoryCreate) -> Category:
+        """
+        สร้าง Category ใหม่สำหรับ User ที่ระบุ พร้อมตรวจสอบสถานะ (invalid state)
+        """
+        # ตรวจสอบสถานะ: ชื่อ Category ต้องไม่ซ้ำกันสำหรับ User คนเดียวกัน
+        existing_category = self._db.query(Category).filter(
+            Category.user_id == user_id,
+            Category.categoryName == category_data.categoryName
+        ).first()
+        if existing_category:
+            raise HTTPException(status_code=400, detail="Category name already exists for this user")
+
+        db_category = Category(
+            category_id=str(uuid.uuid4()),
+            categoryName=category_data.categoryName,
+            colorCode=category_data.colorCode,
+            user_id=user_id
+        )
+        self._db.add(db_category)
+        self._db.commit()
+        self._db.refresh(db_category)
+        return db_category
+
+    # Complex business logic method: อัปเดตรายละเอียด Category
+    def update_category(self, user_id: str, category_id: str, update_data: CategoryBase) -> Category:
+        """
+        อัปเดตข้อมูล Category พร้อมตรวจสอบสถานะ (invalid state)
+        """
+        db_category = self.get_category_by_id(category_id)
+        # ตรวจสอบสถานะ: Category ต้องมีอยู่จริงและเป็นของ User คนนี้
+        if not db_category or db_category.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Category not found or not owned by user")
+
+        # ตรวจสอบสถานะ: หากเปลี่ยนชื่อ Category ต้องไม่ซ้ำกับชื่อที่มีอยู่แล้วสำหรับ User คนเดียวกัน
+        if update_data.categoryName and update_data.categoryName != db_category.categoryName:
+            existing_category = self._db.query(Category).filter(
+                Category.user_id == user_id,
+                Category.categoryName == update_data.categoryName
+            ).first()
+            if existing_category and existing_category.category_id != category_id:
+                raise HTTPException(status_code=400, detail="Category name already exists for this user")
+
+        # ใช้ setter (ผ่าน setattr) เพื่ออัปเดตค่า
+        for field, value in update_data.dict(exclude_unset=True).items():
+            setattr(db_category, field, value)
+        
+        self._db.commit()
+        self._db.refresh(db_category)
+        return db_category
+
+    # Business logic method (Delete Category)
+    def delete_category(self, user_id: str, category_id: str):
+        """
+        ลบ Category ที่ระบุ
+        """
+        db_category = self.get_category_by_id(category_id)
+        # ตรวจสอบสถานะ: Category ต้องมีอยู่จริงและเป็นของ User คนนี้
+        if not db_category or db_category.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Category not found or not owned by user")
+        
+        self._db.delete(db_category)
+        self._db.commit()
+        return {"message": "Category deleted successfully"}

@@ -1,0 +1,87 @@
+import uuid
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from models.assignment import Assignment
+from schemas.assignment import AssignmentCreate, AssignmentBase, Assignment as AssignmentSchema # Assuming you'll create these schemas
+from models.category import Category # เพื่อตรวจสอบว่า category_id มีอยู่จริง
+
+class AssignmentManager:
+    """
+    Class สำหรับจัดการ Business Logic และการเข้าถึงข้อมูลของ Assignment
+    """
+    def __init__(self, db: Session):
+        """
+        Constructor สำหรับ AssignmentManager
+        :param db: SQLAlchemy Session สำหรับการเข้าถึงฐานข้อมูล
+        """
+        self._db = db
+
+    # Getter method
+    def get_assignment_by_id(self, task_id: str) -> Assignment | None:
+        """
+        ดึงข้อมูล Assignment จาก task_id
+        """
+        return self._db.query(Assignment).filter(Assignment.task_id == task_id).first()
+
+    # Getter method
+    def get_assignments_by_category(self, category_id: str) -> list[Assignment]:
+        """
+        ดึงรายการ Assignment ทั้งหมดที่อยู่ใน Category ที่ระบุ
+        """
+        return self._db.query(Assignment).filter(Assignment.category_id == category_id).all()
+
+    # Business logic method (Create Assignment)
+    def create_assignment(self, category_id: str, assignment_data: AssignmentCreate) -> Assignment:
+        """
+        สร้าง Assignment ใหม่สำหรับ Category ที่ระบุ พร้อมตรวจสอบสถานะ (invalid state)
+        """
+        # ตรวจสอบสถานะ: Category ต้องมีอยู่จริง
+        category = self._db.query(Category).filter(Category.category_id == category_id).first()
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+        db_assignment = Assignment(
+            task_id=str(uuid.uuid4()),
+            title=assignment_data.title,
+            description=assignment_data.description,
+            deadline=assignment_data.deadline,
+            status=assignment_data.status,
+            priority=assignment_data.priority,
+            category_id=category_id
+        )
+        self._db.add(db_assignment)
+        self._db.commit()
+        self._db.refresh(db_assignment)
+        return db_assignment
+
+    # Complex business logic method: อัปเดตสถานะของ Assignment
+    def update_assignment_status(self, task_id: str, new_status: str) -> Assignment:
+        """
+        อัปเดตสถานะของ Assignment พร้อมตรวจสอบสถานะ (invalid state)
+        """
+        db_assignment = self.get_assignment_by_id(task_id)
+        if not db_assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        
+        # ตรวจสอบสถานะ: สถานะใหม่ต้องถูกต้อง
+        valid_statuses = ["pending", "in_progress", "completed", "cancelled"]
+        if new_status not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of {valid_statuses}")
+
+        db_assignment.status = new_status
+        self._db.commit()
+        self._db.refresh(db_assignment)
+        return db_assignment
+
+    # Business logic method (Delete Assignment)
+    def delete_assignment(self, task_id: str):
+        """
+        ลบ Assignment ที่ระบุ
+        """
+        db_assignment = self.get_assignment_by_id(task_id)
+        if not db_assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        
+        self._db.delete(db_assignment)
+        self._db.commit()
+        return {"message": "Assignment deleted successfully"}
