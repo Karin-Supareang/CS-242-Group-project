@@ -45,14 +45,14 @@ class UserManager:
         return self._db.query(User).filter(User.username == username).first()
 
     # Getter method
-    def get_user_by_id(self, user_id: str) -> User | None:
+    def get_user_by_id(self, user_id: int) -> User | None:
         """
         ดึงข้อมูล User จาก user_id
         """
         return self._db.query(User).filter(User.user_id == user_id).first()
 
     # Business logic method (Create User)
-    def create_user(self, user_data: UserCreate) -> User:
+    def create_user(self, user_data: UserBase) -> User: # เปลี่ยน Type Hint เป็น UserBase
         """
         สร้าง User ใหม่ในระบบ พร้อมตรวจสอบสถานะ (invalid state)
         """
@@ -61,10 +61,12 @@ class UserManager:
         if self.get_user_by_username(user_data.username):
             raise HTTPException(status_code=400, detail="Username already taken")
         
-        hashed_pwd = self._get_password_hash(user_data.password) if user_data.password else None
+        hashed_pwd = None
+        # ตรวจสอบว่า user_data มี password attribute หรือไม่ (สำหรับ Standard Signup)
+        if hasattr(user_data, 'password') and user_data.password:
+            hashed_pwd = self._get_password_hash(user_data.password)
         
         db_user = User(
-            user_id=str(uuid.uuid4()),
             email=user_data.email,
             username=user_data.username, # เพิ่ม username เข้ามา
             name=user_data.name,
@@ -77,7 +79,7 @@ class UserManager:
         return db_user
 
     # Complex business logic method: อัปเดตโปรไฟล์ผู้ใช้
-    def update_user_profile(self, user_id: str, update_data: UserBase) -> User:
+    def update_user_profile(self, user_id: int, update_data: UserBase) -> User:
         """
         อัปเดตข้อมูลโปรไฟล์ผู้ใช้ พร้อมตรวจสอบสถานะ (invalid state)
         """

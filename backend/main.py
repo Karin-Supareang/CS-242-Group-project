@@ -6,11 +6,9 @@ from controllers.authController import router as auth_router
 from models import user as user_model # นำเข้าเพื่อให้ SQLAlchemy รู้จัก Table ก่อนสร้าง
 from services.UserService import UserManager # Import UserManager class
 from services.CategoryService import CategoryManager # Import CategoryManager class
-from models import category as category_model
+from models import category as category_model # นำเข้าเพื่อให้ SQLAlchemy รู้จัก Table ก่อนสร้าง
 from models import assignment as assignment_model
-
-# สร้าง Table ในฐานข้อมูล (ในโปรเจกต์ขนาดใหญ่ แนะนำให้ใช้ Alembic แทน)
-Base.metadata.create_all(bind=engine)
+from database import SessionLocal
 
 app = FastAPI(title="FastAPI + PostgreSQL ของดี")
 

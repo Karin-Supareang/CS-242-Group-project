@@ -13,9 +13,9 @@ class AssignmentCreate(AssignmentBase):
     pass
 
 class Assignment(AssignmentBase):
-    task_id: str
-    category_id: str
+    task_id: int
+    category_id: int
 
     class Config:
         # อนุญาตให้ Pydantic อ่านข้อมูลจาก ORM model ได้โดยตรง
-        orm_mode = True
+        from_attributes = True # เปลี่ยน orm_mode เป็น from_attributes สำหรับ Pydantic v2

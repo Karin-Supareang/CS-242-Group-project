@@ -1,11 +1,11 @@
-from sqlalchemy import Column, String, Boolean
+from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
 from database import Base
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "user" # เปลี่ยนเป็นเอกพจน์
 
-    user_id = Column(String, primary_key=True, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String, nullable=True)

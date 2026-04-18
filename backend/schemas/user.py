@@ -7,16 +7,16 @@ class UserBase(BaseModel):
     username: str # Required for UserBase and UserCreate
     name: Optional[str] = None
 
+# ข้อมูลตอนสร้าง (รับจาก Client)
+class UserCreate(UserBase):
+    password: Optional[str] = None # Optional เพื่อให้ Google Login สร้างบัญชีได้โดยไม่มีรหัส
+    confirm_password: Optional[str] = None
+
     @validator('username')
     def username_cannot_contain_at(cls, v):
         if '@' in v: # Check if username contains '@'
             raise ValueError('Username cannot contain "@" symbol')
         return v
-
-# ข้อมูลตอนสร้าง (รับจาก Client)
-class UserCreate(UserBase):
-    password: Optional[str] = None # Optional เพื่อให้ Google Login สร้างบัญชีได้โดยไม่มีรหัส
-    confirm_password: Optional[str] = None
 
 # ข้อมูลสำหรับ Login ปกติ
 class UserLogin(BaseModel):
@@ -32,4 +32,8 @@ class UserLogin(BaseModel):
 
 # ข้อมูลตอนส่งกลับ (มี ID กลับไปให้ Client ด้วย)
 class User(UserBase):
-    user_id: str # เปลี่ยนจาก id เป็น user_id
+    user_id: int
+    notification: bool
+
+    class Config:
+        from_attributes = True # เปลี่ยน orm_mode เป็น from_attributes สำหรับ Pydantic v2

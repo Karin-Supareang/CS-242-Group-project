@@ -18,5 +18,5 @@ class StudentLogin(BaseModel):
 
 # ข้อมูลที่ส่งกลับไปให้ Client
 class Student(StudentBase):
-    student_id: str
+    student_id: int
     notification: bool
