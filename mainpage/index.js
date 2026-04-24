@@ -69,13 +69,6 @@ function initUI() {
     function bindTagClick(tag) {
         tag.addEventListener('click', () => {
             tag.classList.toggle('selected');
-            if (tag.classList.contains('selected')) {
-                tag.style.opacity = '1';
-                tag.style.border = '1px solid currentColor';
-            } else {
-                tag.style.opacity = '0.6';
-                tag.style.border = '1px solid transparent';
-            }
         });
     }
 
@@ -92,10 +85,12 @@ function initUI() {
                 const newTag = document.createElement('span');
                 newTag.className = `tag tag--custom tag--selectable selected`;
                 newTag.textContent = tagName.trim();
-                newTag.style.backgroundColor = '#e8eaf6'; // Default color for custom tag
-                newTag.style.color = '#3f51b5';
-                newTag.style.opacity = '1';
-                newTag.style.border = '1px solid currentColor';
+                
+                // Generate a random pastel color for the tag
+                const hue = Math.floor(Math.random() * 360);
+                newTag.style.backgroundColor = `hsla(${hue}, 80%, 60%, 0.15)`; // Slight transparent background
+                newTag.style.color = `hsl(${hue}, 70%, 40%)`;
+                
                 tagSelector.appendChild(newTag);
                 bindTagClick(newTag);
             }
@@ -156,8 +151,6 @@ function initUI() {
             if (uploadText) uploadText.textContent = 'อัปโหลดไฟล์';
             document.querySelectorAll('.tag-selector .tag--selectable.selected').forEach(tag => {
                 tag.classList.remove('selected');
-                tag.style.opacity = '0.6';
-                tag.style.border = '1px solid transparent';
             });
             
             // Close sidebar
