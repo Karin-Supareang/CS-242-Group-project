@@ -209,7 +209,20 @@ function renderUI() {
     
     // Greeting
     document.getElementById('userName').textContent = `Hello, ${user.name}!`;
-    document.querySelector('.user-avatar').textContent = user.initials || "RN";
+    
+    // Avatar handling
+    const imgAvatar = document.getElementById('imgAvatar');
+    const textAvatar = document.getElementById('textAvatar');
+    
+    if (user.avatar_url && imgAvatar && textAvatar) {
+        imgAvatar.src = user.avatar_url;
+        imgAvatar.style.display = 'block';
+        textAvatar.style.display = 'none';
+    } else if (textAvatar) {
+        textAvatar.textContent = user.initials || "RN";
+        if (imgAvatar) imgAvatar.style.display = 'none';
+        textAvatar.style.display = 'block';
+    }
 }
 
 function updateStats() {

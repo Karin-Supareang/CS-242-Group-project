@@ -215,6 +215,13 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 600;
+    overflow: hidden; /* บังคับให้รูปเป็นวงกลม */
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ครอปรูป 1:1 อัตโนมัติ */
 }
 
 /* Stats Grid */
