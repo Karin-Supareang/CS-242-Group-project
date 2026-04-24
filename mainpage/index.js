@@ -41,6 +41,12 @@ function initUI() {
     // Add Task Sidebar Toggle
     if (btnOpenAddTask) {
         btnOpenAddTask.addEventListener('click', () => {
+            const dateText = document.getElementById('sidebarDateText');
+            if (dateText) {
+                const now = new Date();
+                const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                dateText.textContent = `สร้างวันที่ ${now.toLocaleDateString('en-GB', options)}`;
+            }
             addTaskSidebar.classList.add('add-task-sidebar--open');
             overlay.classList.add('overlay--active');
         });
@@ -60,8 +66,7 @@ function initUI() {
     });
 
     // Tag Selection Logic
-    const selectableTags = document.querySelectorAll('.tag--selectable');
-    selectableTags.forEach(tag => {
+    function bindTagClick(tag) {
         tag.addEventListener('click', () => {
             tag.classList.toggle('selected');
             if (tag.classList.contains('selected')) {
@@ -72,7 +77,94 @@ function initUI() {
                 tag.style.border = '1px solid transparent';
             }
         });
-    });
+    }
+
+    const selectableTags = document.querySelectorAll('.tag--selectable');
+    selectableTags.forEach(bindTagClick);
+
+    // New Tag Logic
+    const btnNewTag = document.getElementById('btnNewTag');
+    const tagSelector = document.getElementById('tagSelector');
+    if (btnNewTag && tagSelector) {
+        btnNewTag.addEventListener('click', () => {
+            const tagName = prompt("Enter new tag name:");
+            if (tagName && tagName.trim() !== '') {
+                const newTag = document.createElement('span');
+                newTag.className = `tag tag--custom tag--selectable selected`;
+                newTag.textContent = tagName.trim();
+                newTag.style.backgroundColor = '#e8eaf6'; // Default color for custom tag
+                newTag.style.color = '#3f51b5';
+                newTag.style.opacity = '1';
+                newTag.style.border = '1px solid currentColor';
+                tagSelector.appendChild(newTag);
+                bindTagClick(newTag);
+            }
+        });
+    }
+
+    // File Upload Logic
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadText = document.getElementById('uploadText');
+    if (uploadArea && fileInput && uploadText) {
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadText.textContent = fileInput.files[0].name;
+            } else {
+                uploadText.textContent = 'อัปโหลดไฟล์';
+            }
+        });
+    }
+
+    // Submit New Task Logic
+    const btnSubmitTask = document.getElementById('btnSubmitTask');
+    if (btnSubmitTask) {
+        btnSubmitTask.addEventListener('click', () => {
+            const name = document.getElementById('inputTaskName').value;
+            const date = document.getElementById('inputTaskDate').value;
+            const note = document.getElementById('inputTaskNote').value;
+            
+            if (!name) {
+                alert("Please enter a task name.");
+                return;
+            }
+
+            const selectedTags = Array.from(document.querySelectorAll('.tag-selector .tag--selectable.selected'))
+                .map(tag => tag.textContent.trim());
+            
+            const newTask = {
+                id: Date.now(),
+                title: name,
+                description: note,
+                deadline: date || new Date().toISOString().split('T')[0],
+                status_id: 0,
+                tags: selectedTags
+            };
+
+            appState.tasks.push(newTask);
+            renderTasks();
+            updateStats();
+
+            // Reset form
+            document.getElementById('inputTaskName').value = '';
+            document.getElementById('inputTaskDate').value = '';
+            document.getElementById('inputTaskNote').value = '';
+            if (fileInput) fileInput.value = '';
+            if (uploadText) uploadText.textContent = 'อัปโหลดไฟล์';
+            document.querySelectorAll('.tag-selector .tag--selectable.selected').forEach(tag => {
+                tag.classList.remove('selected');
+                tag.style.opacity = '0.6';
+                tag.style.border = '1px solid transparent';
+            });
+            
+            // Close sidebar
+            if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
+            overlay.classList.remove('overlay--active');
+        });
+    }
 
     // Setup Collapsible Sections for ALL categories
     setupCollapsible('toggleBacklog', 'listBacklog');
