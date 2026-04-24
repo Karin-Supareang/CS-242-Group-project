@@ -35,6 +35,11 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+    overflow: hidden; /* บล็อกแถบเลื่อนหลักของหน้าเว็บ */
+}
+
 body {
     font-family: 'Inter', 'Prompt', sans-serif;
     background-color: var(--bg-main);
@@ -53,13 +58,16 @@ body {
     height: 100vh;
     position: sticky;
     top: 0;
+    align-self: flex-start;
     display: flex;
     flex-direction: column;
     padding: 20px 0;
     transition: width var(--transition);
     z-index: 1000;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     color: var(--text-sidebar);
+    flex-shrink: 0;
 }
 
 .sidebar--expanded {
@@ -166,10 +174,12 @@ body {
 
 /* Main Content */
 .main-content {
-    flex-grow: 1;
+    flex: 1;
     padding: 40px;
     max-width: 1400px;
     margin: 0 auto;
+    overflow-y: auto;
+    height: 100vh;  
 }
 
 .top-bar {
