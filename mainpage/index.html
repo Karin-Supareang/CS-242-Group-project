@@ -87,6 +87,7 @@
                             <option value="due">Sort: Due date</option>
                             <option value="name">Sort: Name</option>
                         </select>
+                        <button class="btn-primary" id="btnOpenAddTask">+ Add Task</button>
                     </div>
                 </div>
 
@@ -150,25 +151,54 @@
         </div>
     </template>
 
-    <script src="index.js" type="module"></script>
-</body>
-</html>
-cklog</option>
-                    <option value="1">Doing</option>
-                    <option value="2">Completed</option>
-                </select>
+    <!-- Add Task Sidebar (Right) -->
+    <aside class="add-task-sidebar" id="addTaskSidebar" aria-label="Add new task sidebar">
+        <div class="add-task-sidebar__header">
+            <h2 class="add-task-sidebar__title">Add new task</h2>
+            <button class="btn-close" id="btnCloseAddTask" aria-label="Close">&times;</button>
+        </div>
+        
+        <div class="add-task-sidebar__body">
+            <div class="form-group">
+                <label class="form-label">ชื่องาน</label>
+                <input type="text" class="form-input" placeholder="เช่น Algorithm Dijkstra exercise">
             </div>
-            <div class="task-card__content">
-                <div class="task-card__header">
-                    <h4 class="task-card__title">Task Title</h4>
-                    <span class="task-card__date">Date</span>
+            
+            <div class="form-group">
+                <label class="form-label">Tag</label>
+                <div class="tag-selector">
+                    <span class="tag tag--assign tag--selectable">Assign</span>
+                    <span class="tag tag--project tag--selectable">Project</span>
+                    <span class="tag tag--detail tag--selectable">Detail</span>
+                    <span class="tag tag--design tag--selectable">Design</span>
                 </div>
-                <div class="task-card__tags">
-                    <!-- Tags will be injected here -->
+                <button class="btn-dashed">+ New tag</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Due date</label>
+                <input type="date" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">แนบไฟล์ (ถ้ามี)</label>
+                <div class="upload-area">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    <span>อัปโหลดไฟล์</span>
                 </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">หมายเหตุ</label>
+                <textarea class="form-input form-textarea" placeholder="คำอธิบายงาน..." rows="4"></textarea>
             </div>
         </div>
-    </template>
+        
+        <div class="add-task-sidebar__footer">
+            <span class="add-task-sidebar__date">สร้างวันที่ 17 Apr 2026</span>
+            <button class="btn-primary btn-submit-task">เพิ่มงาน</button>
+        </div>
+    </aside>
 
     <script src="index.js" type="module"></script>
 </body>

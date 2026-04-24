@@ -21,6 +21,11 @@ function initUI() {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('overlay');
+    
+    // Add Task Sidebar Elements
+    const btnOpenAddTask = document.getElementById('btnOpenAddTask');
+    const btnCloseAddTask = document.getElementById('btnCloseAddTask');
+    const addTaskSidebar = document.getElementById('addTaskSidebar');
 
     // Sidebar Toggle
     toggleBtn.addEventListener('click', () => {
@@ -33,9 +38,40 @@ function initUI() {
         }
     });
 
+    // Add Task Sidebar Toggle
+    if (btnOpenAddTask) {
+        btnOpenAddTask.addEventListener('click', () => {
+            addTaskSidebar.classList.add('add-task-sidebar--open');
+            overlay.classList.add('overlay--active');
+        });
+    }
+
+    if (btnCloseAddTask) {
+        btnCloseAddTask.addEventListener('click', () => {
+            addTaskSidebar.classList.remove('add-task-sidebar--open');
+            overlay.classList.remove('overlay--active');
+        });
+    }
+
     overlay.addEventListener('click', () => {
         sidebar.classList.remove('sidebar--active');
+        if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
         overlay.classList.remove('overlay--active');
+    });
+
+    // Tag Selection Logic
+    const selectableTags = document.querySelectorAll('.tag--selectable');
+    selectableTags.forEach(tag => {
+        tag.addEventListener('click', () => {
+            tag.classList.toggle('selected');
+            if (tag.classList.contains('selected')) {
+                tag.style.opacity = '1';
+                tag.style.border = '1px solid currentColor';
+            } else {
+                tag.style.opacity = '0.6';
+                tag.style.border = '1px solid transparent';
+            }
+        });
     });
 
     // Setup Collapsible Sections for ALL categories
