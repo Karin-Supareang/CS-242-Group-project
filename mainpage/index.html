@@ -11,7 +11,7 @@
 </head>
 <body class="light-theme">
     <div class="layout">
-        <!-- Two-Stage Collapsible Sidebar -->
+        <!-- Two-Stage Collapsible Sidebar (Original Purple) -->
         <nav class="sidebar" id="sidebar" aria-label="Main Navigation">
             <div class="sidebar__logo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
@@ -91,27 +91,37 @@
                     </div>
                 </div>
 
-                <!-- Sections -->
+                <!-- Backlog Section (Collapsible) -->
                 <section class="board__section" id="sectionBacklog">
-                    <div class="section-header">
+                    <div class="section-header section-header--collapsible" id="toggleBacklog">
                         <h3 class="section-title">Backlog</h3>
+                        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
                     </div>
-                    <div class="task-list" id="listBacklog"></div>
+                    <div class="task-list" id="listBacklog">
+                        <!-- Backlog tasks will be injected here -->
+                    </div>
                 </section>
 
+                <!-- Doing Section (Collapsible) -->
                 <section class="board__section" id="sectionDoing">
-                    <div class="section-header">
+                    <div class="section-header section-header--collapsible" id="toggleDoing">
                         <h3 class="section-title">Doing</h3>
+                        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
                     </div>
-                    <div class="task-list" id="listDoing"></div>
+                    <div class="task-list" id="listDoing">
+                        <!-- Doing tasks will be injected here -->
+                    </div>
                 </section>
 
+                <!-- Completed Section (Collapsible) -->
                 <section class="board__section board__section--completed" id="sectionCompleted">
                     <div class="section-header section-header--collapsible" id="toggleCompleted">
                         <h3 class="section-title">Completed tasks (<span id="countCompleted">0</span>)</h3>
                         <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
                     </div>
-                    <div class="task-list task-list--collapsible" id="listCompleted"></div>
+                    <div class="task-list task-list--collapsible" id="listCompleted">
+                        <!-- Completed tasks will be injected here -->
+                    </div>
                 </section>
             </div>
         </main>
@@ -119,7 +129,7 @@
         <div class="overlay" id="overlay" aria-hidden="true"></div>
     </div>
 
-    <!-- Template -->
+    <!-- Task Card Template (Hidden) -->
     <template id="taskTemplate">
         <div class="task-card">
             <div class="task-card__status">
@@ -131,10 +141,12 @@
             </div>
             <div class="task-card__content">
                 <div class="task-card__header">
-                    <h4 class="task-card__title">...</h4>
-                    <span class="task-card__date">...</span>
+                    <h4 class="task-card__title">Task Title</h4>
+                    <span class="task-card__date">Date</span>
                 </div>
-                <div class="task-card__tags"></div>
+                <div class="task-card__tags">
+                    <!-- Tags will be injected here -->
+                </div>
             </div>
         </div>
     </template>

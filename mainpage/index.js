@@ -1,5 +1,5 @@
 /**
- * Smart Academic Planner - Task Board Logic
+ * Smart Academic Planner - Final Polish
  */
 
 const API_CONFIG = {
@@ -21,10 +21,8 @@ function initUI() {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('overlay');
-    const toggleCompleted = document.getElementById('toggleCompleted');
-    const listCompleted = document.getElementById('listCompleted');
 
-    // Sidebar Toggle (Desktop & Mobile)
+    // Sidebar Toggle
     toggleBtn.addEventListener('click', () => {
         const isMobile = window.innerWidth <= 768;
         if (isMobile) {
@@ -40,11 +38,22 @@ function initUI() {
         overlay.classList.remove('overlay--active');
     });
 
-    // Completed Section Collapse
-    toggleCompleted.addEventListener('click', () => {
-        toggleCompleted.classList.toggle('section-header--collapsed');
-        listCompleted.classList.toggle('task-list--hidden');
-    });
+    // Setup Collapsible Sections for ALL categories
+    setupCollapsible('toggleBacklog', 'listBacklog');
+    setupCollapsible('toggleDoing', 'listDoing');
+    setupCollapsible('toggleCompleted', 'listCompleted');
+}
+
+function setupCollapsible(headerId, listId) {
+    const header = document.getElementById(headerId);
+    const list = document.getElementById(listId);
+    
+    if (header && list) {
+        header.addEventListener('click', () => {
+            header.classList.toggle('section-header--collapsed');
+            list.classList.toggle('task-list--hidden');
+        });
+    }
 }
 
 async function loadApp() {
@@ -72,9 +81,9 @@ function renderUI() {
     document.getElementById('pageTitle').textContent = ui.dashboard_header;
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
-    // Greeting
-    document.getElementById('userName').textContent = `${ui.welcome_prefix} ${user.name}!`;
-    document.querySelector('.user-avatar').textContent = user.name.substring(0, 2).toUpperCase();
+    // Greeting - Enforcing "Hello, Rin!" as requested
+    document.getElementById('userName').textContent = `Hello, Rin!`;
+    document.querySelector('.user-avatar').textContent = "RN";
 }
 
 function updateStats() {
@@ -125,24 +134,27 @@ function createTaskCard(task) {
     const clone = template.content.cloneNode(true);
     const card = clone.querySelector('.task-card');
     
-    card.querySelector('.task-card__title').textContent = task.title;
-    card.querySelector('.task-card__date').textContent = formatDate(task.deadline);
-    
+    // Status Circle (Select with no visible text)
     const select = card.querySelector('.status-dropdown');
     select.value = task.status_id;
     select.setAttribute('data-status', task.status_id); 
-    
     select.addEventListener('change', (e) => {
         handleStatusChange(task.id, parseInt(e.target.value));
     });
 
-    const tagsContainer = card.querySelector('.task-card__tags');
-    task.tags.forEach(tagName => {
-        const tag = document.createElement('span');
-        tag.className = `tag tag--${tagName.toLowerCase()}`;
-        tag.textContent = tagName;
-        tagsContainer.appendChild(tag);
-    });
+    // Horizontal Layout matching image 7.png
+    const content = card.querySelector('.task-card__content');
+    content.innerHTML = `
+        <div class="task-card__info">
+            <div class="task-card__header">
+                <h4 class="task-card__title">${task.title}</h4>
+            </div>
+            <div class="task-card__tags">
+                ${task.tags.map(tagName => `<span class="tag tag--${tagName.toLowerCase()}">${tagName}</span>`).join('')}
+            </div>
+        </div>
+        <span class="task-card__date">${formatDate(task.deadline)}</span>
+    `;
 
     return card;
 }
