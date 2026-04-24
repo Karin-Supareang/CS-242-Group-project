@@ -4,12 +4,14 @@
 
 const API_CONFIG = {
     DASHBOARD: './test/data.json',
-    SETTINGS: './test/settings.json'
+    SETTINGS: './test/settings.json',
+    USER: './test/user.json'
 };
 
 let appState = {
     tasks: [],
-    settings: {}
+    settings: {},
+    user: {}
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -88,7 +90,7 @@ function initUI() {
                 
                 // Generate a random pastel color for the tag
                 const hue = Math.floor(Math.random() * 360);
-                newTag.style.backgroundColor = `hsla(${hue}, 80%, 60%, 0.15)`; // Slight transparent background
+                newTag.style.backgroundColor = `hsla(${hue}, 80%, 60%, 0.15)`;
                 newTag.style.color = `hsl(${hue}, 70%, 40%)`;
                 
                 tagSelector.appendChild(newTag);
@@ -179,12 +181,14 @@ function setupCollapsible(headerId, listId) {
 
 async function loadApp() {
     try {
-        const [settingsRes, dataRes] = await Promise.all([
+        const [settingsRes, dataRes, userRes] = await Promise.all([
             fetch(API_CONFIG.SETTINGS),
-            fetch(API_CONFIG.DASHBOARD)
+            fetch(API_CONFIG.DASHBOARD),
+            fetch(API_CONFIG.USER)
         ]);
 
         appState.settings = await settingsRes.json();
+        appState.user = await userRes.json();
         const data = await dataRes.json();
         appState.tasks = data.tasks;
 
@@ -197,14 +201,15 @@ async function loadApp() {
 }
 
 function renderUI() {
-    const { ui, user } = appState.settings;
+    const { ui } = appState.settings;
+    const { user } = appState;
     document.title = ui.title;
     document.getElementById('pageTitle').textContent = ui.dashboard_header;
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
-    // Greeting - Enforcing "Hello, Rin!" as requested
-    document.getElementById('userName').textContent = `Hello, Rin!`;
-    document.querySelector('.user-avatar').textContent = "RN";
+    // Greeting
+    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
+    document.querySelector('.user-avatar').textContent = user.initials || "RN";
 }
 
 function updateStats() {
