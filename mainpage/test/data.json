@@ -1,0 +1,58 @@
+{
+    "user": {
+        "name": "ริน",
+        "avatar": ""
+    },
+    "stats": {
+        "total_tasks": 15,
+        "upcoming_deadlines": 5,
+        "completed_tasks": 42
+    },
+    "tasks": [
+        {
+            "id": "task_1",
+            "title": "CS232 Assignment 3",
+            "category": "CS232",
+            "tags": ["Detail", "Assign"],
+            "deadline": "2026-04-28",
+            "status_id": 0,
+            "status_label": "ยังไม่ส่ง"
+        },
+        {
+            "id": "task_2",
+            "title": "Pj Cloud Phase I",
+            "category": "Project",
+            "tags": ["Project", "Presentation"],
+            "deadline": "2026-04-25",
+            "status_id": 1,
+            "status_label": "กำลังทำ"
+        },
+        {
+            "id": "task_3",
+            "title": "Database UI Design (1/2)",
+            "category": "CS232",
+            "tags": ["Project", "Design"],
+            "deadline": "2026-05-01",
+            "status_id": 0,
+            "status_label": "ยังไม่ส่ง"
+        },
+        {
+            "id": "task_4",
+            "title": "Figma AI Prototype",
+            "category": "Design",
+            "tags": ["Design"],
+            "deadline": "2026-03-02",
+            "status_id": 2,
+            "status_label": "ส่งแล้ว"
+        },
+        {
+            "id": "task_5",
+            "title": "Infographic OS",
+            "category": "Project",
+            "tags": ["Project", "Assign"],
+            "deadline": "2026-03-10",
+            "status_id": 2,
+            "status_label": "ส่งแล้ว"
+        }
+    ]
+}

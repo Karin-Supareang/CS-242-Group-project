@@ -1,0 +1,27 @@
+{
+    "language": "th",
+    "ui": {
+        "title": "Smart Academic Planner - Soft Blooming",
+        "dashboard_header": "แดชบอร์ด",
+        "welcome_prefix": "ยินดีต้อนรับ,",
+        "sidebar": {
+            "home": "หน้าหลัก",
+            "task": "งานที่ต้องทำ",
+            "notification": "การแจ้งเตือน",
+            "settings": "ตั้งค่า",
+            "logout": "ออกจากระบบ"
+        },
+        "sections": {
+            "recent_tasks": "งานล่าสุด",
+            "task_name": "ชื่องาน",
+            "category": "หมวดหมู่",
+            "deadline": "กำหนดส่ง",
+            "status": "สถานะ"
+        }
+    },
+    "user": {
+        "name": "ชาววิลทรัมหมายเลข 36",
+        "role": "นักศึกษา",
+        "avatar_url": ""
+    }
+}
