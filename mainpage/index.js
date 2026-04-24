@@ -24,10 +24,15 @@ function initUI() {
     const toggleCompleted = document.getElementById('toggleCompleted');
     const listCompleted = document.getElementById('listCompleted');
 
-    // Sidebar Toggle
+    // Sidebar Toggle (Desktop & Mobile)
     toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('sidebar--active');
-        overlay.classList.toggle('overlay--active');
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            sidebar.classList.toggle('sidebar--active');
+            overlay.classList.toggle('overlay--active');
+        } else {
+            sidebar.classList.toggle('sidebar--expanded');
+        }
     });
 
     overlay.addEventListener('click', () => {
@@ -67,7 +72,7 @@ function renderUI() {
     document.getElementById('pageTitle').textContent = ui.dashboard_header;
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
-    // Restore Hello message
+    // Greeting
     document.getElementById('userName').textContent = `${ui.welcome_prefix} ${user.name}!`;
     document.querySelector('.user-avatar').textContent = user.name.substring(0, 2).toUpperCase();
 }
@@ -76,7 +81,6 @@ function updateStats() {
     const total = appState.tasks.length;
     const completed = appState.tasks.filter(t => t.status_id === 2).length;
     
-    // Simple logic for "upcoming": tasks due within next 7 days that aren't completed
     const now = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(now.getDate() + 7);
@@ -105,12 +109,9 @@ function renderTasks() {
 
     appState.tasks.forEach(task => {
         const card = createTaskCard(task);
-        
-        if (task.status_id === 0) {
-            listBacklog.appendChild(card);
-        } else if (task.status_id === 1) {
-            listDoing.appendChild(card);
-        } else if (task.status_id === 2) {
+        if (task.status_id === 0) listBacklog.appendChild(card);
+        else if (task.status_id === 1) listDoing.appendChild(card);
+        else if (task.status_id === 2) {
             listCompleted.appendChild(card);
             completedCount++;
         }
@@ -129,7 +130,7 @@ function createTaskCard(task) {
     
     const select = card.querySelector('.status-dropdown');
     select.value = task.status_id;
-    select.setAttribute('data-status', task.status_id); // For CSS coloring
+    select.setAttribute('data-status', task.status_id); 
     
     select.addEventListener('change', (e) => {
         handleStatusChange(task.id, parseInt(e.target.value));
@@ -150,9 +151,8 @@ function handleStatusChange(taskId, newStatusId) {
     const taskIndex = appState.tasks.findIndex(t => t.id === taskId);
     if (taskIndex !== -1) {
         appState.tasks[taskIndex].status_id = newStatusId;
-        console.log(`Task ${taskId} moved to status ${newStatusId}.`);
-        updateStats(); // Recalculate stats
-        renderTasks(); // Re-sort tasks into sections
+        updateStats();
+        renderTasks();
     }
 }
 
