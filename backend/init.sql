@@ -1,4 +1,5 @@
 -- 1. ลบตารางเก่า (เรียงลำดับตามความสัมพันธ์ FK)
+DROP TABLE IF EXISTS assignment_category;
 DROP TABLE IF EXISTS assignment;
 DROP TABLE IF EXISTS category;
 DROP TABLE IF EXISTS "user"; 
@@ -27,7 +28,17 @@ CREATE TABLE assignment (
     deadline TIMESTAMP NOT NULL,
     status VARCHAR NOT NULL,
     priority INTEGER NOT NULL,
-    category_id INTEGER NOT NULL REFERENCES category(category_id) ON DELETE CASCADE -- เปลี่ยนเป็น INTEGER
+    estimated_time INTEGER,
+    percentage INTEGER,
+    file_data BYTEA,
+    file_name VARCHAR,
+    file_mimetype VARCHAR
+);
+-- 4.5. สร้างตารางเชื่อม (Many-to-Many) สำหรับ assignment และ category
+CREATE TABLE assignment_category (
+    task_id INTEGER REFERENCES assignment(task_id) ON DELETE CASCADE,
+    category_id INTEGER REFERENCES category(category_id) ON DELETE CASCADE,
+    PRIMARY KEY (task_id, category_id)
 );
 -- 5. เพิ่มข้อมูล (ระวังชื่อตารางและชื่อ Column ให้ตรงกับตอนสร้าง)
 -- สำหรับ SERIAL PRIMARY KEY ไม่ต้องระบุคอลัมน์ user_id ใน INSERT statement
@@ -38,3 +49,8 @@ VALUES ('admin@example.com', 'adminuser', 'Admin User', '$2b$12$yourhashedpasswo
 -- และ user_id ต้องเป็น INTEGER ที่ได้จาก user ที่สร้างไปแล้ว
 INSERT INTO category (category_name, color_code, user_id)
 VALUES ('Homework', '#FF5733', (SELECT user_id FROM "user" WHERE username = 'adminuser'));
+
+-- เพิ่มข้อมูล Category เริ่มต้นเพิ่มเติม
+INSERT INTO category (category_name, color_code, user_id)
+VALUES ('Project', '#33AFFF', (SELECT user_id FROM "user" WHERE username = 'adminuser')),
+       ('Exam', '#FFC300', (SELECT user_id FROM "user" WHERE username = 'adminuser'));

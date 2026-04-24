@@ -2,11 +2,17 @@ from pydantic import BaseModel
 from typing import Optional
 
 class CategoryBase(BaseModel):
-    category_name: str # เปลี่ยนเป็น snake_case
-    color_code: str # เปลี่ยนเป็น snake_case
+    category_name: str
+    color_code: str = "#808080" # กำหนดค่า Default ที่นี่
 
 class CategoryCreate(CategoryBase):
-    pass
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "category_name": "โปรเจกต์จบ",
+                "color_code": "#FF5733"
+            }
+        }
 
 class Category(CategoryBase):
     category_id: int

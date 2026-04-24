@@ -53,33 +53,6 @@ class CategoryManager:
         self._db.refresh(db_category)
         return db_category
 
-    # Complex business logic method: อัปเดตรายละเอียด Category
-    def update_category(self, user_id: int, category_id: int, update_data: CategoryBase) -> Category:
-        """
-        อัปเดตข้อมูล Category พร้อมตรวจสอบสถานะ (invalid state)
-        """
-        db_category = self.get_category_by_id(category_id)
-        # ตรวจสอบสถานะ: Category ต้องมีอยู่จริงและเป็นของ User คนนี้
-        if not db_category or db_category.user_id != user_id:
-            raise HTTPException(status_code=404, detail="Category not found or not owned by user")
-
-        # ตรวจสอบสถานะ: หากเปลี่ยนชื่อ Category ต้องไม่ซ้ำกับชื่อที่มีอยู่แล้วสำหรับ User คนเดียวกัน
-        if update_data.category_name and update_data.category_name != db_category.category_name: # เปลี่ยนเป็น category_name
-            existing_category = self._db.query(Category).filter(
-                Category.user_id == user_id,
-                Category.category_name == update_data.category_name # เปลี่ยนเป็น category_name
-            ).first()
-            if existing_category and existing_category.category_id != category_id:
-                raise HTTPException(status_code=400, detail="Category name already exists for this user")
-
-        # ใช้ setter (ผ่าน setattr) เพื่ออัปเดตค่า
-        for field, value in update_data.dict(exclude_unset=True).items():
-            setattr(db_category, field, value)
-        
-        self._db.commit()
-        self._db.refresh(db_category)
-        return db_category
-
     # Business logic method (Delete Category)
     def delete_category(self, user_id: int, category_id: int):
         """

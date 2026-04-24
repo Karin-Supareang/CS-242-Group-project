@@ -12,5 +12,5 @@ class Category(Base):
 
     # ความสัมพันธ์: 1 Category เป็นของ 1 User
     user = relationship("User", back_populates="categories")
-    # ความสัมพันธ์: 1 Category มีได้หลาย Assignment
-    assignments = relationship("Assignment", back_populates="category")
+    # ความสัมพันธ์: Many-to-Many ไปยัง Assignment
+    assignments = relationship("Assignment", secondary="assignment_category", back_populates="categories")

@@ -1,3 +1,5 @@
+name: cs242backend # กำหนดชื่อ Project ตรงนี้ (จะครอบคลุมทุก Service)
+
 services:
   web:
     build: .

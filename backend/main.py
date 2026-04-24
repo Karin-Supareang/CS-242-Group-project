@@ -1,23 +1,19 @@
 from fastapi import FastAPI
-from starlette.middleware.sessions import SessionMiddleware
 import os
-from database import engine, Base
+from starlette.middleware.sessions import SessionMiddleware
 from controllers.authController import router as auth_router
-from models import user as user_model # นำเข้าเพื่อให้ SQLAlchemy รู้จัก Table ก่อนสร้าง
-from services.UserService import UserManager # Import UserManager class
-from services.CategoryService import CategoryManager # Import CategoryManager class
-from models import category as category_model # นำเข้าเพื่อให้ SQLAlchemy รู้จัก Table ก่อนสร้าง
-from models import assignment as assignment_model
-from database import SessionLocal
+from controllers.categoryController import router as category_router
+from controllers.assignmentController import router as assignment_router
 
-app = FastAPI(title="FastAPI + PostgreSQL ของดี")
+app = FastAPI(
+    title="FastAPI + PostgreSQL"
+)
 
-# การทำ OAuth ต้องใช้ Session เก็บค่า State ป้องกันการโจมตีแบบ CSRF
+# การทำ OAuth ต้องใช้ Session เก็บค่า State ป้องกันการโจมตีแบบ CSRF สำหรับการทำงานของ Session ใน FastAPI เราต้องเพิ่ม Middleware และกำหนด Secret Key เพื่อเข้ารหัสข้อมูลใน Session
+# ของ google log in ห้ามลบ
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY"))
 
-@app.get("/")
-def read_root():
-    return {"message": "API is running successfully!"}
 
-# กำหนด Prefix ตัวอย่างเช่น /api/v1 (ทำให้ /users กลายเป็น /api/v1/users ทันที)
-app.include_router(auth_router, prefix="/api/v1")
+app.include_router(auth_router)
+app.include_router(category_router)
+app.include_router(assignment_router)

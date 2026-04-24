@@ -1,10 +1,10 @@
-import uuid
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from typing import Optional # เพิ่มบรรทัดนี้
+from typing import Optional
 from models.user import User
-from schemas.user import UserCreate, UserLogin, UserBase
+from schemas.user import UserBase
+from models.category import Category
+from sqlalchemy.orm import Session
 
 class UserManager:
     """
@@ -76,34 +76,16 @@ class UserManager:
         self._db.add(db_user)
         self._db.commit()
         self._db.refresh(db_user)
-        return db_user
-
-    # Complex business logic method: อัปเดตโปรไฟล์ผู้ใช้
-    def update_user_profile(self, user_id: int, update_data: UserBase) -> User:
-        """
-        อัปเดตข้อมูลโปรไฟล์ผู้ใช้ พร้อมตรวจสอบสถานะ (invalid state)
-        """
-        db_user = self.get_user_by_id(user_id)
-        if not db_user:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        # ตรวจสอบสถานะ: หากเปลี่ยนอีเมล ต้องไม่ซ้ำกับอีเมลที่มีอยู่แล้วของคนอื่น
-        if update_data.email and update_data.email != db_user.email:
-            existing_user = self.get_user_by_email(update_data.email)
-            if existing_user and existing_user.user_id != user_id:
-                raise HTTPException(status_code=400, detail="Email already taken by another user")
-        if update_data.username and update_data.username != db_user.username:
-            existing_user = self.get_user_by_username(update_data.username)
-            if existing_user and existing_user.user_id != user_id:
-                raise HTTPException(status_code=400, detail="Username already taken by another user")
-
-
-        # ใช้ setter (ผ่าน setattr) เพื่ออัปเดตค่า
-        for field, value in update_data.dict(exclude_unset=True).items():
-            setattr(db_user, field, value)
         
+        # สร้าง Category เริ่มต้น 3 หมวดหมู่ (ทำงานทันทีที่สร้างบัญชีสำเร็จ รวมถึงการล็อกอินผ่าน Google ครั้งแรกด้วย)
+        default_categories = [
+            Category(category_name="Urgent", color_code="#FF5733", user_id=db_user.user_id),
+            Category(category_name="Soon", color_code="#FFC300", user_id=db_user.user_id),
+            Category(category_name="Later", color_code="#33AFFF", user_id=db_user.user_id)
+        ]
+        self._db.add_all(default_categories)
         self._db.commit()
-        self._db.refresh(db_user)
+        
         return db_user
 
     # Business logic method: ตรวจสอบการเข้าสู่ระบบ

@@ -1,18 +1,55 @@
 import os
+from typing import Optional
 from fastapi import APIRouter, Request, HTTPException, Depends, status # เพิ่ม status
-import uuid # Added for fallback username generation
-from fastapi.security import OAuth2PasswordBearer # เปลี่ยนเป็น OAuth2PasswordBearer
+from fastapi.responses import RedirectResponse # เพิ่มการ import RedirectResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from sqlalchemy.orm import Session
 from authlib.integrations.starlette_client import OAuth
 from database import SessionLocal
 from services.UserService import UserManager # Import the UserManager class
 # ดึง Schema จากโฟลเดอร์ schemas
-from schemas.user import UserCreate, UserLogin, User, UserBase # เพิ่ม UserBase
+from schemas.user import UserCreate, UserLogin, User, UserBase, UserSignupResponse # เพิ่ม UserSignupResponse
 from schemas.token import Token # เพิ่มการ import Token schema
 from auth_utils import create_access_token, verify_token # เพิ่มการ import ฟังก์ชันสร้าง JWT และ verify_token
+from sqlalchemy.orm import Session
 
-router = APIRouter(tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+# ปิด auto_error=False เพื่อให้ระบบไม่เด้ง Error ทันทีถ้าไม่มี Header (จะได้ไปหาใน Cookie ต่อ)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+# Dependency ตัวใหม่สำหรับดึง Token (รองรับทั้ง Header จาก LocalStorage และ Cookie)
+def get_token_from_header_or_cookie(
+    request: Request
+):
+    # 1. ลองเช็กจาก Header ตรงๆ เองเลย
+    auth_header = request.headers.get("Authorization")
+    token_from_header = None
+    
+    if auth_header and auth_header.startswith("Bearer "):
+        token_from_header = auth_header.split(" ")[1]
+    
+    if token_from_header:
+        return token_from_header
+        
+    # 2. ถ้า Header ไม่มี ลองเช็กจาก Cookie
+    token_from_cookie = request.cookies.get("access_token")
+    if token_from_cookie:
+        return token_from_cookie
+        
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated. Please provide token in Header or Cookie.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+# Dependency สำหรับตรวจสอบและดึง User ID ปัจจุบันจาก Token
+def get_current_user_id(token: str = Depends(get_token_from_header_or_cookie)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    token_data = verify_token(token, credentials_exception)
+    return int(token_data.user_id)
 
 # Dependency สำหรับดึง Database Session
 def get_db():
@@ -29,24 +66,37 @@ def get_user_manager(db: Session = Depends(get_db)) -> UserManager:
     """
     return UserManager(db)
 
-# OAuth2PasswordBearer สำหรับการดึง Token จาก Header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login") # ชี้ไปที่ endpoint สำหรับ login
 
-# Dependency สำหรับดึงข้อมูลผู้ใช้ปัจจุบันจาก Token
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    user_manager: UserManager = Depends(get_user_manager)
-) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    token_data = verify_token(token, credentials_exception)
-    user = user_manager.get_user_by_id(int(token_data.user_id)) # user_id เป็น int แล้ว
-    if user is None:
-        raise credentials_exception
-    return user
+
+@router.post("/signup", response_model=UserSignupResponse, summary="ลงทะเบียนผู้ใช้ใหม่")
+def signup_standard(user_data: UserCreate, user_manager: UserManager = Depends(get_user_manager)):
+    # การสมัครแบบปกติ บังคับว่าต้องส่งรหัสผ่าน
+    if not user_data.password:
+        raise HTTPException(status_code=400, detail="Password is required")
+        
+    if user_data.password != user_data.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+        
+    new_user = user_manager.create_user(user_data)
+    
+    # ดึงชื่อ Category ทั้งหมดที่เพิ่งถูกสร้างขึ้นมาให้ User คนนี้
+    category_names = [category.category_name for category in new_user.categories]
+    return {
+        "message": "User created successfully",
+        "user": new_user,
+        "categories": category_names
+    }
+
+@router.post("/login", response_model=Token, summary="เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน")
+def login_standard(user_data: UserLogin, user_manager: UserManager = Depends(get_user_manager)):
+    db_user = user_manager.authenticate_user(email=user_data.email, username=user_data.username, password=user_data.password)
+    # ตรวจสอบว่าบัญชีมีอยู่จริง และมีรหัสผ่าน (กันคนใช้ Google Login มาล็อกอินแบบปกติ)
+    if not db_user: # authenticate_user จะจัดการเรื่อง user/password ไม่ตรงกันแล้ว
+        raise HTTPException(status_code=400, detail="No user found or Invalid credentials")
+        
+    # สร้าง JWT Token
+    access_token = create_access_token(data={"sub": str(db_user.user_id)}) # Convert user_id to string for JWT sub claim
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # ตั้งค่าระบบ OAuth
 oauth = OAuth()
@@ -60,40 +110,13 @@ oauth.register(
     }
 )
 
-@router.post("/signup", response_model=User, summary="ลงทะเบียนผู้ใช้ใหม่")
-def signup_standard(user_data: UserCreate, user_manager: UserManager = Depends(get_user_manager)):
-    # การสมัครแบบปกติ บังคับว่าต้องส่งรหัสผ่าน
-    if not user_data.password:
-        raise HTTPException(status_code=400, detail="Password is required")
-        
-    if user_data.password != user_data.confirm_password:
-        raise HTTPException(status_code=400, detail="Passwords do not match")
-        
-    return user_manager.create_user(user_data)
-
-@router.post("/login", response_model=Token, summary="เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน")
-def login_standard(user_data: UserLogin, user_manager: UserManager = Depends(get_user_manager)):
-    db_user = user_manager.authenticate_user(email=user_data.email, username=user_data.username, password=user_data.password)
-    # ตรวจสอบว่าบัญชีมีอยู่จริง และมีรหัสผ่าน (กันคนใช้ Google Login มาล็อกอินแบบปกติ)
-    if not db_user: # authenticate_user จะจัดการเรื่อง user/password ไม่ตรงกันแล้ว
-        raise HTTPException(status_code=400, detail="No user found or Invalid credentials")
-        
-    # สร้าง JWT Token
-    access_token = create_access_token(data={"sub": str(db_user.user_id)}) # Convert user_id to string for JWT sub claim
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@router.get("/users/me", response_model=User, summary="ดึงข้อมูลผู้ใช้ปัจจุบัน (Protected Route)")
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    """ดึงข้อมูลโปรไฟล์ของผู้ใช้ที่กำลังล็อกอินอยู่"""
-    return current_user
-
 @router.get("/login/google", summary="เริ่มกระบวนการเข้าสู่ระบบด้วย Google") # ไม่ต้องเปลี่ยน response_model ตรงนี้ เพราะมันจะ redirect
 async def login_via_google(request: Request):
     # สร้าง URL ปลายทางที่ Google จะส่งกลับมาเมื่อ Login สำเร็จ
     redirect_uri = request.url_for('auth_google_callback')
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@router.get("/auth/google/callback", response_model=Token, summary="Callback URL สำหรับ Google Login")
+@router.get("/google/callback", summary="Callback URL สำหรับ Google Login") # เอา response_model ออกเพราะเราจะ Redirect
 async def auth_google_callback(request: Request, user_manager: UserManager = Depends(get_user_manager)):
     try:
         token = await oauth.google.authorize_access_token(request)
@@ -119,4 +142,47 @@ async def auth_google_callback(request: Request, user_manager: UserManager = Dep
         
     # สร้าง JWT Token
     access_token = create_access_token(data={"sub": str(db_user.user_id)}) # Convert user_id to string for JWT sub claim
+    
+    # ดึง URL ของ Frontend จาก .env (ถ้าไม่มีให้ใช้ default เป็น http://localhost:3000)
+    frontend_url = os.getenv("GOOGLE_CALLBACK_FRONTEND_URL", "http://localhost:3000")
+    
+    # ส่งกลับไปยังหน้า Frontend พร้อมแนบ Token ไปใน URL 
+    # เช่น http://localhost:3000/login/success?token=eyJhbGciOiJIUz...
+    redirect_url = f"{frontend_url}?token={access_token}"
+    
+    # สร้าง Response สำหรับการเปลี่ยนหน้า
+    response = RedirectResponse(url=redirect_url)
+    
+    # ทำอย่างที่ 2 ไปพร้อมกัน: ฝัง Token ลงใน Cookie ของเบราว์เซอร์
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=7200, # อายุคุกกี้ 2 ชั่วโมง (7200 วินาที)
+        httponly=False # ตั้งเป็น False เพื่อให้ Frontend (JavaScript) สามารถเข้าถึงคุกกี้นี้ได้ด้วย
+    )
+    
+    return response
+
+@router.get("/me", response_model=User, summary="ดึงข้อมูลผู้ใช้ปัจจุบัน (Protected Route)")
+async def read_users_me(
+    user_id: int = Depends(get_current_user_id),
+    user_manager: UserManager = Depends(get_user_manager)
+):
+    """ดึงข้อมูลโปรไฟล์ของผู้ใช้ที่กำลังล็อกอินอยู่"""
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+
+# API สำหรับให้ปุ่ม Authorize ใน Swagger UI ใช้งานโดยเฉพาะ (รับข้อมูลแบบ Form Data)
+@router.post("/swagger-login", response_model=Token, include_in_schema=False)
+def login_swagger(form_data: OAuth2PasswordRequestForm = Depends(), user_manager: UserManager = Depends(get_user_manager)):
+    # ใน Swagger ผู้ใช้อาจจะกรอก email หรือ username ลงในช่อง username ก็ได้
+    db_user = user_manager.authenticate_user(email=form_data.username, username=form_data.username, password=form_data.password)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+        
+    access_token = create_access_token(data={"sub": str(db_user.user_id)})
     return {"access_token": access_token, "token_type": "bearer"}
