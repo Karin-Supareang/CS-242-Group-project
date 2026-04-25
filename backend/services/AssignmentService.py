@@ -19,18 +19,24 @@ class AssignmentManager:
         self._db = db
 
     # Getter method
-    def get_assignment_by_id(self, task_id: int) -> Assignment | None:
+    def get_assignment_by_id(self, task_id: int, user_id: int) -> Assignment | None:
         """
-        ดึงข้อมูล Assignment จาก task_id
+        ดึงข้อมูล Assignment จาก task_id และตรวจสอบว่าเป็นของ user_id นี้
         """
-        return self._db.query(Assignment).filter(Assignment.task_id == task_id).first()
+        return self._db.query(Assignment).join(Assignment.categories).filter(
+            Assignment.task_id == task_id,
+            Category.user_id == user_id
+        ).first()
 
     # Getter method
-    def get_assignments_by_category(self, category_id: int) -> list[Assignment]:
+    def get_assignments_by_category(self, category_id: int, user_id: int) -> list[Assignment]:
         """
-        ดึงรายการ Assignment ทั้งหมดที่อยู่ใน Category ที่ระบุ
+        ดึงรายการ Assignment ทั้งหมดที่อยู่ใน Category ที่ระบุ (ต้องเป็นของ user ด้วย)
         """
-        category = self._db.query(Category).filter(Category.category_id == category_id).first()
+        category = self._db.query(Category).filter(
+            Category.category_id == category_id,
+            Category.user_id == user_id
+        ).first()
         if not category:
             return []
         return category.assignments # ใช้ relationship ดึงข้อมูลออกมาได้เลย
@@ -41,13 +47,24 @@ class AssignmentManager:
         สร้าง Assignment ใหม่ และเชื่อมกับ Category หลายๆ หมวดหมู่
         """
         # ดึง Category ตาม ID ที่ส่งมา และต้องเป็นของ User คนนี้เท่านั้น
-        categories = self._db.query(Category).filter(
-            Category.category_id.in_(assignment_data.category_ids),
-            Category.user_id == user_id
-        ).all()
-        
-        if len(categories) != len(assignment_data.category_ids):
-            raise HTTPException(status_code=403, detail="One or more categories not found or not authorized")
+        categories = []
+        if assignment_data.category_ids:
+            categories = self._db.query(Category).filter(
+                Category.category_id.in_(assignment_data.category_ids),
+                Category.user_id == user_id
+            ).all()
+            
+            if len(categories) != len(set(assignment_data.category_ids)):
+                raise HTTPException(status_code=403, detail="One or more categories not found or not authorized")
+
+        # ถ้าผู้ใช้ไม่ได้เลือกหมวดหมู่มาเลย ให้ค้นหา Category "Later" ของ User คนนี้มาใส่แทน
+        if not categories:
+            default_category = self._db.query(Category).filter(
+                Category.category_name == "Later",
+                Category.user_id == user_id
+            ).first()
+            if default_category:
+                categories.append(default_category)
 
         db_assignment = Assignment(
             title=assignment_data.title,
@@ -65,11 +82,11 @@ class AssignmentManager:
         return db_assignment
 
     # Business logic method (Append AI Summary)
-    def append_summary_to_description(self, task_id: int, summary: str) -> Assignment:
+    def append_summary_to_description(self, task_id: int, user_id: int, summary: str) -> Assignment:
         """
         นำข้อความสรุปจาก AI ไปต่อท้าย Description ของ Assignment
         """
-        db_assignment = self.get_assignment_by_id(task_id)
+        db_assignment = self.get_assignment_by_id(task_id, user_id)
         if not db_assignment:
             raise HTTPException(status_code=404, detail="Assignment not found")
             
@@ -105,26 +122,26 @@ class AssignmentManager:
             return f"เกิดข้อผิดพลาดในการวิเคราะห์ไฟล์ด้วย AI: {str(e)}"
 
     # Business logic method (Delete Assignment)
-    def delete_assignment(self, task_id: int):
+    def delete_assignment(self, task_id: int, user_id: int):
         """
         ลบ Assignment ที่ระบุ
         """
-        db_assignment = self.get_assignment_by_id(task_id)
+        db_assignment = self.get_assignment_by_id(task_id, user_id)
         if not db_assignment:
-            raise HTTPException(status_code=404, detail="Assignment not found")
+            raise HTTPException(status_code=404, detail="Assignment not found or not authorized")
         
         self._db.delete(db_assignment)
         self._db.commit()
         return {"message": "Assignment deleted successfully"}
 
     # Business logic method (Upload File)
-    def upload_file(self, task_id: int, file_content: bytes, file_name: str, file_mimetype: str) -> Assignment:
+    def upload_file(self, task_id: int, user_id: int, file_content: bytes, file_name: str, file_mimetype: str) -> Assignment:
         """
         อัปโหลดไฟล์แนบสำหรับ Assignment
         """
-        db_assignment = self.get_assignment_by_id(task_id)
+        db_assignment = self.get_assignment_by_id(task_id, user_id)
         if not db_assignment:
-            raise HTTPException(status_code=404, detail="Assignment not found")
+            raise HTTPException(status_code=404, detail="Assignment not found or not authorized")
         
         db_assignment.file_data = file_content
         db_assignment.file_name = file_name

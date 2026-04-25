@@ -12,7 +12,7 @@ class AssignmentBase(BaseModel):
     percentage: Optional[int] = 0
 
 class AssignmentCreate(AssignmentBase):
-    category_ids: list[int] # เปลี่ยนมารับเป็น List ของ ID หมวดหมู่
+    category_ids: list[int] = [] # เปลี่ยนให้รับค่าเริ่มต้นเป็น list ว่าง (ไม่ต้องบังคับส่ง)
     class Config:
         json_schema_extra = {
             "example": {
