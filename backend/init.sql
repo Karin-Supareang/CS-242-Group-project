@@ -91,8 +91,8 @@ VALUES
 INSERT INTO assignment (title, description, deadline, status, estimated_time, percentage)
 VALUES
 ('CS222 Assignment', 'งานวิชา CS222', '2024-04-26 23:59:00', 'pending', 6, 0),
-('CS242 Assignment', 'งานวิชา CS242', '2024-04-30 23:59:00', 'pending', 96, 30),
-('CS232 Assignment', 'งานวิชา CS232', '2024-04-27 23:59:00', 'pending', 288, 70);
+('CS242 Assignment', 'งานวิชา CS242', '2024-04-30 23:59:00', 'pending', 24, 30),
+('CS232 Assignment', 'งานวิชา CS232', '2024-04-27 23:59:00', 'pending', 36, 70);
 
 -- เชื่อม Assignment ใหม่เข้ากับ Category (สมมติว่า ID เริ่มจาก 6)
 INSERT INTO assignment_category (task_id, category_id)

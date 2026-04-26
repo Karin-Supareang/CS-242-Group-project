@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Any
 from datetime import datetime
 
 class AssignmentBase(BaseModel):
@@ -39,6 +39,8 @@ class AssignmentUpdate(BaseModel):
 
 class Assignment(AssignmentBase):
     task_id: int
+    categories: List[Any] = [] # เพิ่มฟิลด์ categories เพื่อส่งกลับให้ Frontend
+    file_name: Optional[str] = None # ส่งชื่อไฟล์กลับไปให้ Frontend รู้ว่ามีไฟล์แนบ
 
     class Config:
         # อนุญาตให้ Pydantic อ่านข้อมูลจาก ORM model ได้โดยตรง
