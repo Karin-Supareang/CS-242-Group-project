@@ -49,6 +49,14 @@ INSERT INTO "user" (email, username, name, hashed_password, notification)
 VALUES ('admin@example.com', 'adminuser', 'Admin User', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', true);
 -- หมายเหตุ: รหัสผ่านของ adminuser คือคำว่า password
 
+
+
+-- เพิ่มข้อมูล Category พื้นฐาน (Urgent, Soon, Later) ให้ adminuser
+INSERT INTO category (category_name, color_code, user_id)
+VALUES ('Urgent', '#FF5733', (SELECT user_id FROM "user" WHERE username = 'adminuser')),
+       ('Soon', '#FFC300', (SELECT user_id FROM "user" WHERE username = 'adminuser')),
+       ('Later', '#33AFFF', (SELECT user_id FROM "user" WHERE username = 'adminuser'));
+
 -- สำหรับ SERIAL PRIMARY KEY ไม่ต้องระบุคอลัมน์ category_id ใน INSERT statement
 -- และ user_id ต้องเป็น INTEGER ที่ได้จาก user ที่สร้างไปแล้ว
 INSERT INTO category (category_name, color_code, user_id)
@@ -58,6 +66,8 @@ VALUES ('Homework', '#FF5733', (SELECT user_id FROM "user" WHERE username = 'adm
 INSERT INTO category (category_name, color_code, user_id)
 VALUES ('Project', '#33AFFF', (SELECT user_id FROM "user" WHERE username = 'adminuser')),
        ('Exam', '#FFC300', (SELECT user_id FROM "user" WHERE username = 'adminuser'));
+
+
 
 -- เพิ่มข้อมูล Assignment สำหรับทดสอบ Notification และ Priority
 INSERT INTO assignment (title, description, deadline, status, estimated_time, percentage)
