@@ -5,6 +5,7 @@ from models.user import User
 from schemas.user import UserBase
 from models.category import Category
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 class UserManager:
     """
@@ -35,14 +36,14 @@ class UserManager:
         """
         ดึงข้อมูล User จากอีเมล
         """
-        return self._db.query(User).filter(User.email == email).first()
+        return self._db.query(User).filter(func.lower(User.email) == email.lower()).first()
 
     # Getter method
     def get_user_by_username(self, username: str) -> User | None:
         """
         ดึงข้อมูล User จาก username
         """
-        return self._db.query(User).filter(User.username == username).first()
+        return self._db.query(User).filter(func.lower(User.username) == username.lower()).first()
 
     # Getter method
     def get_user_by_id(self, user_id: int) -> User | None:
@@ -67,8 +68,8 @@ class UserManager:
             hashed_pwd = self._get_password_hash(user_data.password)
         
         db_user = User(
-            email=user_data.email,
-            username=user_data.username, # เพิ่ม username เข้ามา
+            email=user_data.email.lower(),
+            username=user_data.username.lower(), # บังคับให้เป็นตัวพิมพ์เล็กเสมอ
             name=user_data.name,
             hashed_password=hashed_pwd,
             notification=True # กำหนดค่าเริ่มต้น
@@ -96,7 +97,7 @@ class UserManager:
         user = None
         if email:
             user = self.get_user_by_email(email)
-        elif username:
+        if not user and username:
             user = self.get_user_by_username(username)
 
         if not user or not user.hashed_password:

@@ -11,6 +11,8 @@ class User(Base):
     hashed_password = Column(String, nullable=True)
     name = Column(String)
     notification = Column(Boolean, default=True)
+    google_access_token = Column(String, nullable=True)
+    google_refresh_token = Column(String, nullable=True)
 
     # ความสัมพันธ์: 1 User มีได้หลาย Category
     categories = relationship("Category", back_populates="user")

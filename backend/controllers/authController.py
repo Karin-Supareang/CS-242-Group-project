@@ -106,15 +106,27 @@ oauth.register(
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
-        'scope': 'openid email profile'
+        'scope': 'openid email profile' # ตั้งค่าเริ่มต้นให้ไม่มี Calendar
     }
 )
 
-@router.get("/login/google", summary="เริ่มกระบวนการเข้าสู่ระบบด้วย Google") # ไม่ต้องเปลี่ยน response_model ตรงนี้ เพราะมันจะ redirect
+@router.get("/login/google", summary="เข้าสู่ระบบด้วย Google (ปกติ)")
 async def login_via_google(request: Request):
-    # สร้าง URL ปลายทางที่ Google จะส่งกลับมาเมื่อ Login สำเร็จ
     redirect_uri = request.url_for('auth_google_callback')
+    # ล็อกอินปกติไม่ต้องขอ offline token และไม่ต้องขอ consent ซ้ำ
     return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@router.get("/login/google/calendar", summary="เข้าสู่ระบบด้วย Google (พร้อม Calendar)")
+async def login_via_google_calendar(request: Request):
+    redirect_uri = request.url_for('auth_google_callback')
+    # ขอสิทธิ์ Calendar พิเศษ, บังคับขอ offline token และ consent
+    return await oauth.google.authorize_redirect(
+        request, 
+        redirect_uri, 
+        access_type='offline', 
+        prompt='consent',
+        scope='openid email profile https://www.googleapis.com/auth/calendar'
+    )
 
 @router.get("/google/callback", summary="Callback URL สำหรับ Google Login") # เอา response_model ออกเพราะเราจะ Redirect
 async def auth_google_callback(request: Request, user_manager: UserManager = Depends(get_user_manager)):
@@ -140,6 +152,13 @@ async def auth_google_callback(request: Request, user_manager: UserManager = Dep
         new_user = UserBase(email=email, username=generated_username, name=user_info.get("name")) # ใช้ UserBase แทน UserCreate
         db_user = user_manager.create_user(new_user)
         
+    # อัปเดต Token ของ Google ลง Database (เพื่อให้ Backend เอาไปใช้สร้าง Calendar Event ภายหลัง)
+    if 'access_token' in token:
+        db_user.google_access_token = token['access_token']
+    if 'refresh_token' in token:
+        db_user.google_refresh_token = token['refresh_token']
+    user_manager._db.commit() # Save token ลง DB
+
     # สร้าง JWT Token
     access_token = create_access_token(data={"sub": str(db_user.user_id)}) # Convert user_id to string for JWT sub claim
     
@@ -173,16 +192,4 @@ async def read_users_me(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-
-
-
-# API สำหรับให้ปุ่ม Authorize ใน Swagger UI ใช้งานโดยเฉพาะ (รับข้อมูลแบบ Form Data)
-@router.post("/swagger-login", response_model=Token, include_in_schema=False)
-def login_swagger(form_data: OAuth2PasswordRequestForm = Depends(), user_manager: UserManager = Depends(get_user_manager)):
-    # ใน Swagger ผู้ใช้อาจจะกรอก email หรือ username ลงในช่อง username ก็ได้
-    db_user = user_manager.authenticate_user(email=form_data.username, username=form_data.username, password=form_data.password)
-    if not db_user:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-        
-    access_token = create_access_token(data={"sub": str(db_user.user_id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    

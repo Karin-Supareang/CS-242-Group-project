@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response, Form
-from schemas.assignment import Assignment, AssignmentCreate
+from schemas.assignment import Assignment, AssignmentCreate, AssignmentUpdate
 from schemas.category import Category
 from services.AssignmentService import AssignmentManager
 from services.CategoryService import CategoryManager
@@ -12,6 +12,16 @@ router = APIRouter(prefix="/assignment", tags=["Assignments"])
 def create_assignment(assignment_data: AssignmentCreate, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
     manager = AssignmentManager(db)
     return manager.create_assignment(user_id, assignment_data)
+
+@router.get("/get/all", response_model=list[Assignment], summary="ดึง Assignment ทั้งหมดของผู้ใช้สำหรับแสดงปฏิทิน")
+def get_all_assignments(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
+    manager = AssignmentManager(db)
+    return manager.get_all_assignments_by_user(user_id)
+
+@router.patch("/update/{task_id}", response_model=Assignment)
+def update_assignment(task_id: int, update_data: AssignmentUpdate, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
+    manager = AssignmentManager(db)
+    return manager.update_assignment(task_id, user_id, update_data)
 
 @router.get("/get/tasks/{category_id}", response_model=list[Assignment])
 def get_assignments_by_category(category_id: int, db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)):
@@ -60,6 +70,12 @@ async def upload_assignment_file(
         ai_analysis = manager.analyze_file_content(file_content, file.content_type)
         # 3. นำผลที่ได้ไปต่อท้าย description ของ Assignment
         manager.append_summary_to_description(task_id, user_id, ai_analysis)
+        
+        # 4. ให้ AI ประเมินเวลาทำงานจากไฟล์ แล้วอัปเดตลง Database (ถ้าผู้ใช้ยังไม่ได้กำหนดเวลาไว้)
+        if assignment.estimated_time is None or assignment.estimated_time == 0:
+            estimated_time = manager.estimate_time_from_file(file_content, file.content_type)
+            if estimated_time is not None:
+                manager.update_assignment(task_id, user_id, AssignmentUpdate(estimated_time=estimated_time))
     
     return {
         "message": "File uploaded successfully",

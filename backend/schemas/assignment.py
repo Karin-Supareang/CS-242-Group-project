@@ -7,7 +7,7 @@ class AssignmentBase(BaseModel):
     description: Optional[str] = None
     deadline: datetime
     status: str
-    priority: int
+    priority: Optional[int] = 1
     estimated_time: Optional[int] = None
     percentage: Optional[int] = 0
 
@@ -26,6 +26,16 @@ class AssignmentCreate(AssignmentBase):
                 "category_ids": [1, 2]
             }
         }
+
+class AssignmentUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    deadline: Optional[datetime] = None
+    status: Optional[str] = None
+    priority: Optional[int] = None
+    estimated_time: Optional[int] = None
+    percentage: Optional[int] = None
+    category_ids: Optional[list[int]] = None
 
 class Assignment(AssignmentBase):
     task_id: int

@@ -18,12 +18,13 @@ class Assignment(Base):
     description = Column(Text, nullable=True)
     deadline = Column(DateTime)
     status = Column(String)
-    priority = Column(Integer)
+    priority = Column(Integer, nullable=True) # อนุญาตให้เป็นค่าว่าง (None) ได้
     estimated_time = Column(Integer, nullable=True)
     percentage = Column(Integer, default=0)
     file_data = Column(LargeBinary, nullable=True) # ใช้ LargeBinary สำหรับ BYTEA
     file_name = Column(String, nullable=True)
     file_mimetype = Column(String, nullable=True)
+    google_event_id = Column(String, nullable=True) # เก็บ ID ของ Event ใน Google Calendar
 
     # ความสัมพันธ์ Many-to-Many ไปยัง Category (ผูกผ่าน Table เชื่อม)
     categories = relationship("Category", secondary=assignment_category, back_populates="assignments")
