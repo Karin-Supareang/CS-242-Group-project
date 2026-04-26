@@ -88,10 +88,10 @@ async def check_deadlines_and_notify():
             db.close()
         
         # --- ⚠️ โค้ดชั่วคราวสำหรับทดสอบ (คอมเมนต์โค้ดจริงไว้ก่อน) ---
-        # now_after = datetime.now(thai_tz)
-        # next_hour = (now_after + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-        # sleep_seconds = (next_hour - now_after).total_seconds()
-        # await asyncio.sleep(sleep_seconds)
+        now_after = datetime.now(thai_tz)
+        next_hour = (now_after + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        sleep_seconds = (next_hour - now_after).total_seconds()
+        await asyncio.sleep(sleep_seconds)
         
-        print("✅ [Test Mode] Notification Job ทำงานเสร็จสิ้น รออีก 10 วินาทีเพื่อรันรอบถัดไป...")
-        await asyncio.sleep(10) # สั่งให้รันวนไปทุกๆ 10 วินาทีแทน
+        #print("✅ [Test Mode] Notification Job ทำงานเสร็จสิ้น รออีก 10 วินาทีเพื่อรันรอบถัดไป...")
+        await asyncio.sleep(sleep_seconds) # สั่งให้รันวนไปทุกๆ 10 วินาทีแทน
