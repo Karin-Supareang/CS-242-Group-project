@@ -21,11 +21,38 @@ toLogin.addEventListener('click', (e) => {
 });
 
 // 3. Register form submit
-document.getElementById('registerForm').addEventListener('submit', function(e) {
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    alert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบอีกครั้ง');
-    registerSection.style.display = 'none';
-    loginSection.style.display = 'block';
+    
+    const firstName = document.getElementById('regFirstName').value;
+    const lastName = document.getElementById('regLastName').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: email,
+                name: `${firstName} ${lastName}`.trim(),
+                password: password,
+                confirm_password: password
+            }) // 💡 ไม่ได้ส่ง username ไปด้วย เพื่อให้ Backend ดึงจากหน้า @ ของอีเมลให้เลย
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Signup failed');
+        }
+
+        alert('ลงทะเบียนสำเร็จแล้ว! ระบบได้สร้าง Username ให้อัตโนมัติ กรุณาเข้าสู่ระบบอีกครั้ง');
+        registerSection.style.display = 'none';
+        loginSection.style.display = 'block';
+        this.reset(); // ล้างข้อมูลในฟอร์มออก
+    } catch (error) {
+        alert('เกิดข้อผิดพลาด: ' + error.message);
+    }
 });
 
 // 4. Login form submit

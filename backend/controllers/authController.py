@@ -134,7 +134,7 @@ async def auth_google_callback(request: Request, user_manager: UserManager = Dep
 
     db_user = user_manager.get_user_by_email(email)
     if not db_user:
-        # ไม่ต้องสร้าง username อัตโนมัติอีกต่อไป (ให้เป็น None ไปเลย)
+        # ปล่อยให้ UserService จัดการสร้าง username อัตโนมัติจากคำหน้า @ ของ email
         new_user = UserBase(email=email, name=user_info.get("name")) 
         db_user = user_manager.create_user(new_user)
 

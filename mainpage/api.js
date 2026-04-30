@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080', // URL ของ FastAPI Backend
+  // ดึง URL จากไฟล์ .env (ถ้าไม่มีจะใช้ 8080 เป็นค่าเริ่มต้น)
+  baseURL: import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8080',
 });
 
 // ตัวดักจับ Request เพื่อแนบ JWT Token อัตโนมัติ

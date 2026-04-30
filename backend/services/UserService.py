@@ -61,8 +61,19 @@ class UserManager:
         """
         if self.get_user_by_email(user_data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
-        if user_data.username and self.get_user_by_username(user_data.username):
-            raise HTTPException(status_code=400, detail="Username already taken")
+
+        # กำหนดค่า username: ถ้าไม่ได้กรอกมา ให้ดึงคำหน้า @ จากอีเมล
+        final_username = user_data.username if user_data.username else user_data.email.split('@')[0]
+        
+        # ตรวจสอบความซ้ำซ้อนในฐานข้อมูล
+        original_username = final_username
+        counter = 1
+        while self.get_user_by_username(final_username):
+            if user_data.username: # ถ้าผู้ใช้เจาะจงพิมพ์มาเองแล้วซ้ำ ให้แจ้ง Error แบบปกติ
+                raise HTTPException(status_code=400, detail="Username already taken")
+            # ถ้าเป็นระบบ Auto-generate แล้วซ้ำ ให้รันตัวเลขต่อท้ายไปเรื่อยๆ (เช่น test1, test2)
+            final_username = f"{original_username}{counter}"
+            counter += 1
         
         hashed_pwd = None
         # ตรวจสอบว่า user_data มี password attribute หรือไม่ (สำหรับ Standard Signup)
@@ -71,7 +82,7 @@ class UserManager:
         
         db_user = User(
             email=user_data.email.lower(),
-            username=user_data.username.lower() if user_data.username else None,
+            username=final_username.lower(),
             name=user_data.name,
             hashed_password=hashed_pwd,
             notification=True # กำหนดค่าเริ่มต้น
