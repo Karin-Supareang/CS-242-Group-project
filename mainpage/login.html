@@ -4,10 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vFAST - Login & Register</title>
+    <!-- Use global variables from index.css -->
+    <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="login.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="light-theme">
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme') || 'light';
+            document.body.classList.remove('light-theme', 'dark-theme');
+            document.body.classList.add(saved + '-theme');
+        })();
+    </script>
     <div class="login-container">
         <div class="login-card">
             <br>
@@ -16,16 +25,18 @@
             <br>
             <!-- Login Section -->
             <div id="loginSection">
-                <form id="loginForm">
+                <div id="loginError" class="error-msg" style="display: none;"></div>
+                <form id="loginForm" novalidate>
                     <div class="input-group">
                         <label>Email</label>
                         <input type="email" id="loginEmail" placeholder="example@university.ac.th" required>
+                        <span class="field-error" id="emailError"></span>
                     </div>
                     <div class="input-group">
                         <label>Password</label>
                         <input type="password" id="loginPassword" placeholder="********" required>
+                        <span class="field-error" id="passwordError"></span>
                     </div>
-                    <br>
                     <br>
                     <button type="submit" class="submit-btn">เข้าสู่ระบบ</button>
                 </form>
@@ -44,25 +55,28 @@
 
             <!-- Register Section -->
             <div id="registerSection" style="display: none;">
-                <h3 style="margin-top:0; color:#4e54a4;">สมัครสมาชิก</h3>
-                <form id="registerForm">
+                <h3 style="margin-top:0; color:var(--accent);">สมัครสมาชิก</h3>
+                <div id="registerError" class="error-msg" style="display: none;"></div>
+                <form id="registerForm" novalidate>
                     <div class="name-row">
                         <div class="input-group">
                             <label>ชื่อ</label>
-                            <input type="text" placeholder="ชื่อจริง" required>
+                            <input type="text" id="regFirstName" placeholder="ชื่อจริง" required>
                         </div>
                         <div class="input-group">
                             <label>นามสกุล</label>
-                            <input type="text" placeholder="นามสกุล" required>
+                            <input type="text" id="regLastName" placeholder="นามสกุล" required>
                         </div>
                     </div>
                     <div class="input-group">
                         <label>Email</label>
-                        <input type="email" placeholder="example@university.ac.th" required>
+                        <input type="email" id="regEmail" placeholder="example@university.ac.th" required>
+                        <span class="field-error" id="regEmailError"></span>
                     </div>
                     <div class="input-group">
                         <label>Password</label>
-                        <input type="password" placeholder="********" required>
+                        <input type="password" id="regPassword" placeholder="********" required>
+                        <span class="field-error" id="regPasswordError"></span>
                     </div>
                     <button type="submit" class="submit-btn">ลงทะเบียน</button>
                 </form>

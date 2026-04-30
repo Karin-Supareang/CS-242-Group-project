@@ -265,11 +265,16 @@ function renderProfileTab() {
     } else {
         const user = userState.data || { name: '', username: '', email: '' };
         const displayName = user.name || user.username || 'US';
+        const avatarUrl = user.avatar_url ? user.avatar_url : '';
         
         board.innerHTML = `
             <div class="profile-header">
-                <div class="avatar-large">${displayName.substring(0, 2).toUpperCase()}</div>
-                <button class="btn-dashed">Edit picture</button>
+                <div class="avatar-large" id="profileTabAvatar">
+                    ${avatarUrl ? `<img src="${avatarUrl}" id="profileTabImg" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : 
+                    `<span id="profileTabText">${displayName.substring(0, 2).toUpperCase()}</span>`}
+                </div>
+                <input type="file" id="inputAvatarFile" accept="image/*" style="display: none;">
+                <button class="btn-dashed" id="btnEditPicture">Edit picture</button>
             </div>
             <div class="form-grid">
                 <div class="form-group">
@@ -300,6 +305,37 @@ function renderProfileTab() {
                 <button class="btn-danger" id="btnOpenDelete">Delete profile and log out</button>
             </div>
         `;
+
+        // Profile Picture Logic
+        const btnEditPicture = document.getElementById('btnEditPicture');
+        const inputAvatarFile = document.getElementById('inputAvatarFile');
+        const profileTabAvatar = document.getElementById('profileTabAvatar');
+
+        btnEditPicture?.addEventListener('click', () => inputAvatarFile?.click());
+
+        inputAvatarFile?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const result = event.target.result;
+                    profileTabAvatar.innerHTML = `<img src="${result}" id="profileTabImg" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+                    
+                    // Update header avatar too
+                    const imgHeader = document.getElementById('imgAvatar');
+                    const textHeader = document.getElementById('textAvatar');
+                    if (imgHeader) {
+                        imgHeader.src = result;
+                        imgHeader.style.display = 'block';
+                    }
+                    if (textHeader) textHeader.style.display = 'none';
+                    
+                    // Update state (simulation)
+                    if (userState.data) userState.data.avatar_url = result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
         document.getElementById('btnSaveProfile')?.addEventListener('click', () => {
             alert("บันทึกข้อมูลเรียบร้อยแล้ว! (จำลองการทำงาน)");
