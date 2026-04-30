@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS "user";
 CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
     email VARCHAR UNIQUE NOT NULL,
-    username VARCHAR UNIQUE NOT NULL,
+    username VARCHAR UNIQUE,
     name VARCHAR,
     hashed_password VARCHAR,
     notification BOOLEAN DEFAULT TRUE,

@@ -1,10 +1,11 @@
-from pydantic import BaseModel, validator, root_validator # เพิ่ม root_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
+
 # ไฟล์นี้คือ Schema สำหรับ User ครับ มีอยู่จริงและจำเป็นมากสำหรับโปรเจกต์
 # ข้อมูลพื้นฐาน
 class UserBase(BaseModel):
     email: str # Required for UserBase and UserCreate
-    username: str # Required for UserBase and UserCreate
+    username: Optional[str] = None
     name: Optional[str] = None
     class Config:
         json_schema_extra = {
@@ -12,14 +13,16 @@ class UserBase(BaseModel):
                 "api": "localhost:8000/auth/login/google"
             }
         }
+
 # ข้อมูลตอนสร้าง (รับจาก Client)
 class UserCreate(UserBase):
     password: Optional[str] = None # Optional เพื่อให้ Google Login สร้างบัญชีได้โดยไม่มีรหัส
     confirm_password: Optional[str] = None
 
-    @validator('username')
-    def username_cannot_contain_at(cls, v):
-        if '@' in v: # Check if username contains '@'
+    @field_validator('username')
+    @classmethod
+    def username_cannot_contain_at(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and '@' in v: # Check if username contains '@'
             raise ValueError('Username cannot contain "@" symbol')
         return v
 
@@ -40,11 +43,12 @@ class UserLogin(BaseModel):
     email: Optional[str] = None 
     username: Optional[str] = None 
     password: str
-    @root_validator(skip_on_failure=True) # แก้ไขตรงนี้
-    def check_email_or_username(cls, values):
-        if not values.get('email') and not values.get('username'):
+
+    @model_validator(mode='after')
+    def check_email_or_username(self) -> 'UserLogin':
+        if not self.email and not self.username:
             raise ValueError('Either email or username must be provided')
-        return values
+        return self
         
     class Config:
         json_schema_extra = {
@@ -67,3 +71,8 @@ class UserSignupResponse(BaseModel):
     message: str
     user: User
     categories: list[str] # เพิ่มฟิลด์สำหรับส่งรายชื่อ Category กลับไป
+
+# ข้อมูลสำหรับอัปเดตโปรไฟล์
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    username: Optional[str] = None

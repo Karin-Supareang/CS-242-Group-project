@@ -21,6 +21,7 @@ async def check_deadlines_and_notify():
             
             # ดึง User ทั้งหมดมาจัด Priority (ไม่ว่าจะเปิดแจ้งเตือนหรือมีอีเมลหรือไม่)
             users = db.query(User).all()
+            print(f"\n🔍 [Notification Job] เริ่มรันรอบใหม่เวลา {now.strftime('%H:%M:%S')} - พบ User ทั้งหมด {len(users)} คน")
             
             email_manager = EmailManager()
 
@@ -36,6 +37,8 @@ async def check_deadlines_and_notify():
                         task.priority = None # งานที่เสร็จแล้ว ให้ Priority เป็น None
                     else:
                         active_assignments.append(task)
+
+                print(f"👤 User: {user.email} (Noti: {user.notification}) - พบงานที่กำลังทำ {len(active_assignments)} งาน")
 
                 # 1. คำนวณและอัปเดต Priority เฉพาะงานที่ยังไม่เสร็จ (เปรียบเทียบจากเวลาทำงานที่เหลือจริงๆ)
                 tasks_with_work = []
@@ -55,10 +58,13 @@ async def check_deadlines_and_notify():
                 if user.notification and user.email:
                     for task in active_assignments:
                         if not task.deadline:
+                            print(f"  ⏩ ข้ามงาน '{task.title}' - ไม่มีกำหนดส่ง")
                             continue
                         
+                        display_name = user.name or user.username or user.email.split('@')[0]
                         delta = task.deadline - now
                         hours_left = delta.total_seconds() / 3600.0
+                        print(f"  ⏰ งาน '{task.title}' - เหลือเวลา {hours_left:.2f} ชั่วโมง")
 
                         subject = None
                         message = None
@@ -66,19 +72,24 @@ async def check_deadlines_and_notify():
                         # เช็กเงื่อนไขเวลา (ใช้ช่วงกว้าง 1 ชม. เพราะ loop รันทุก 1 ชม. จะได้ไม่ส่งซ้ำ)
                         if 23 <= hours_left <= 24:
                             subject = f"[แจ้งเตือน] งาน '{task.title}' จะถึงกำหนดส่งในอีก 1 วัน!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nงาน '{task.title}' กำลังจะถึงกำหนดส่งในอีก 1 วัน!\n📅 กำหนดส่ง: {task.deadline.strftime('%d/%m/%Y %H:%M')}\n\nอย่าลืมเข้าไปจัดการงานให้เรียบร้อยนะครับ\n\nจากระบบ Smart Academic Plan"
-                        elif 5 <= hours_left <= 6:
+                            message = f"สวัสดีคุณ {display_name},\n\nงาน '{task.title}' กำลังจะถึงกำหนดส่งในอีก 1 วัน!\n📅 กำหนดส่ง: {task.deadline.strftime('%d/%m/%Y %H:%M')}\n\nอย่าลืมเข้าไปจัดการงานให้เรียบร้อยนะครับ\n\nจากระบบ Smart Academic Plan"
+                        elif 4 <= hours_left <= 6:
                             subject = f"[ด่วน] งาน '{task.title}' เหลือเวลาอีก 6 ชั่วโมงสุดท้าย!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nงาน '{task.title}' เหลือเวลาอีก 6 ชั่วโมงสุดท้ายแล้ว! รีบจัดการให้เสร็จนะครับ!"
-                        elif 3 <= hours_left <= 4:
+                            message = f"สวัสดีคุณ {display_name},\n\nงาน '{task.title}' เหลือเวลาอีก 6 ชั่วโมงสุดท้ายแล้ว! รีบจัดการให้เสร็จนะครับ!"
+                        elif 2 <= hours_left <= 4:
                             subject = f"[ด่วนมาก] งาน '{task.title}' เหลือเวลาอีก 4 ชั่วโมงสุดท้าย!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nงาน '{task.title}' เหลือเวลาอีก 4 ชั่วโมงสุดท้าย!"
-                        elif 1 <= hours_left <= 2:
+                            message = f"สวัสดีคุณ {display_name},\n\nงาน '{task.title}' เหลือเวลาอีก 4 ชั่วโมงสุดท้าย!"
+                        elif 0 <= hours_left <= 2:
                             subject = f"[โคตรด่วน] งาน '{task.title}' เหลือเวลาอีก 2 ชั่วโมงสุดท้าย!!!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nไฟลนก้นแล้ว! งาน '{task.title}' เหลือเวลาอีกแค่ 2 ชั่วโมงสุดท้าย! ปั่นด่วน!"
+                            message = f"สวัสดีคุณ {display_name},\n\nไฟลนก้นแล้ว! งาน '{task.title}' เหลือเวลาอีกแค่ 2 ชั่วโมงสุดท้าย! ปั่นด่วน!"
 
                         if subject and message:
+                            print(f"    ✅ เข้าเงื่อนไขเตือน! กำลังพยายามส่งอีเมล: {subject}")
                             await email_manager.send_email(user.email, subject, message)
+                        else:
+                            print(f"    ❌ ไม่เข้าเงื่อนไขส่งอีเมล (เวลาที่เหลือไม่อยู่ในช่วง 1-2, 3-4, 5-6 หรือ 23-24 ชม.)")
+                else:
+                    print("  ⏩ ข้ามการแจ้งเตือน - User ปิดแจ้งเตือนหรือไม่มีอีเมล")
             
             # บันทึกการเปลี่ยนแปลง Priority ของงานทั้งหมดลง Database
             db.commit()

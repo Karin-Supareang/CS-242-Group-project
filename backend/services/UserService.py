@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from passlib.context import CryptContext
 from typing import Optional
 from models.user import User
-from schemas.user import UserBase
+from schemas.user import UserBase, UserUpdate
 from models.category import Category
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -43,6 +43,8 @@ class UserManager:
         """
         ดึงข้อมูล User จาก username
         """
+        if not username:
+            return None
         return self._db.query(User).filter(func.lower(User.username) == username.lower()).first()
 
     # Getter method
@@ -59,8 +61,19 @@ class UserManager:
         """
         if self.get_user_by_email(user_data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
-        if self.get_user_by_username(user_data.username):
-            raise HTTPException(status_code=400, detail="Username already taken")
+
+        # กำหนดค่า username: ถ้าไม่ได้กรอกมา ให้ดึงคำหน้า @ จากอีเมล
+        final_username = user_data.username if user_data.username else user_data.email.split('@')[0]
+        
+        # ตรวจสอบความซ้ำซ้อนในฐานข้อมูล
+        original_username = final_username
+        counter = 1
+        while self.get_user_by_username(final_username):
+            if user_data.username: # ถ้าผู้ใช้เจาะจงพิมพ์มาเองแล้วซ้ำ ให้แจ้ง Error แบบปกติ
+                raise HTTPException(status_code=400, detail="Username already taken")
+            # ถ้าเป็นระบบ Auto-generate แล้วซ้ำ ให้รันตัวเลขต่อท้ายไปเรื่อยๆ (เช่น test1, test2)
+            final_username = f"{original_username}{counter}"
+            counter += 1
         
         hashed_pwd = None
         # ตรวจสอบว่า user_data มี password attribute หรือไม่ (สำหรับ Standard Signup)
@@ -69,7 +82,7 @@ class UserManager:
         
         db_user = User(
             email=user_data.email.lower(),
-            username=user_data.username.lower(), # บังคับให้เป็นตัวพิมพ์เล็กเสมอ
+            username=final_username.lower(),
             name=user_data.name,
             hashed_password=hashed_pwd,
             notification=True # กำหนดค่าเริ่มต้น
@@ -105,3 +118,24 @@ class UserManager:
         if not self._verify_password(password, user.hashed_password):
             return None # รหัสผ่านไม่ตรงกัน
         return user
+
+    # Business logic method (Update User)
+    def update_user(self, user_id: int, update_data: UserUpdate) -> User | None:
+        """
+        อัปเดตข้อมูล User (ชื่อ และ Username)
+        """
+        db_user = self.get_user_by_id(user_id)
+        if not db_user:
+            return None
+        
+        if update_data.username is not None and update_data.username.lower() != (db_user.username.lower() if db_user.username else ""):
+            if self.get_user_by_username(update_data.username):
+                raise HTTPException(status_code=400, detail="Username already taken")
+            db_user.username = update_data.username.lower()
+            
+        if update_data.name is not None:
+            db_user.name = update_data.name
+            
+        self._db.commit()
+        self._db.refresh(db_user)
+        return db_user

@@ -8,7 +8,7 @@ from authlib.integrations.starlette_client import OAuth
 from database import SessionLocal
 from services.UserService import UserManager # Import the UserManager class
 # ดึง Schema จากโฟลเดอร์ schemas
-from schemas.user import UserCreate, UserLogin, User, UserBase, UserSignupResponse # เพิ่ม UserSignupResponse
+from schemas.user import UserCreate, UserLogin, User, UserBase, UserSignupResponse, UserUpdate
 from schemas.token import Token # เพิ่มการ import Token schema
 from auth_utils import create_access_token, verify_token # เพิ่มการ import ฟังก์ชันสร้าง JWT และ verify_token
 from sqlalchemy.orm import Session
@@ -134,10 +134,8 @@ async def auth_google_callback(request: Request, user_manager: UserManager = Dep
 
     db_user = user_manager.get_user_by_email(email)
     if not db_user:
-        # ใช้ email เต็มๆ เป็น username สำหรับ Google Login
-        # เนื่องจาก email เป็น unique อยู่แล้ว username ก็จะ unique ด้วย
-        generated_username = email
-        new_user = UserBase(email=email, username=generated_username, name=user_info.get("name")) # ใช้ UserBase แทน UserCreate
+        # ปล่อยให้ UserService จัดการสร้าง username อัตโนมัติจากคำหน้า @ ของ email
+        new_user = UserBase(email=email, name=user_info.get("name")) 
         db_user = user_manager.create_user(new_user)
 
     # สร้าง JWT Token
@@ -174,3 +172,14 @@ async def read_users_me(
         raise HTTPException(status_code=404, detail="User not found")
     return user
     
+@router.patch("/me", response_model=User, summary="อัปเดตข้อมูลผู้ใช้ปัจจุบัน")
+async def update_users_me(
+    update_data: UserUpdate,
+    user_id: int = Depends(get_current_user_id),
+    user_manager: UserManager = Depends(get_user_manager)
+):
+    """อัปเดตโปรไฟล์ของผู้ใช้ที่กำลังล็อกอินอยู่"""
+    updated_user = user_manager.update_user(user_id, update_data)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated_user
