@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSidebar('notification');
     await loadData();
     initFilter();
-    initRoleSwitcher();
 });
 
 async function loadData() {
@@ -31,6 +30,8 @@ async function loadData() {
 }
 
 function renderUser(user) {
+    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
+
     const imgAvatar = document.getElementById('imgAvatar');
     const textAvatar = document.getElementById('textAvatar');
     if (user.avatar_url && imgAvatar) {
@@ -93,19 +94,6 @@ function getStatusBadge(statusId) {
 function initFilter() {
     document.getElementById('filterSelect').addEventListener('change', e => {
         renderNotifications(e.target.value);
-    });
-}
-
-function initRoleSwitcher() {
-    const btnTeacher = document.getElementById('roleTeacher');
-    const btnStudent  = document.getElementById('roleStudent');
-    btnTeacher.addEventListener('click', () => {
-        btnTeacher.classList.add('role-btn--active');
-        btnStudent.classList.remove('role-btn--active');
-    });
-    btnStudent.addEventListener('click', () => {
-        btnStudent.classList.add('role-btn--active');
-        btnTeacher.classList.remove('role-btn--active');
     });
 }
 
