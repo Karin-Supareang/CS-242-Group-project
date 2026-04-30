@@ -5,18 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vFAST - Login & Register</title>
     <link rel="stylesheet" href="login.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
-            <h1>vFAST</h1>
-            <p class="subtitle">ระบบส่งงาน</p>
-
-            <div class="role-selector">
-                <button class="role-btn active">อาจารย์</button>
-                <button class="role-btn">นักศึกษา</button>
-            </div>
-
+            <br>
+            <h1>Soft blooming</h1>
+            <br>
+            <br>
+            <!-- Login Section -->
             <div id="loginSection">
                 <form id="loginForm">
                     <div class="input-group">
@@ -27,11 +25,24 @@
                         <label>Password</label>
                         <input type="password" id="loginPassword" placeholder="********" required>
                     </div>
+                    <br>
+                    <br>
                     <button type="submit" class="submit-btn">เข้าสู่ระบบ</button>
                 </form>
+                <br>
+                <!-- Google Login Button -->
+                <div class="google-login-wrapper">
+                    <div id="g_id_onload"
+                         data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                         data-callback="handleGoogleLogin">
+                    </div>
+                    <div class="g_id_signin" data-type="standard" data-width="100%"></div>
+                </div>
+
                 <p class="toggle-link">ยังไม่มีบัญชี? <a href="#" id="toRegister">สมัครสมาชิก</a></p>
             </div>
 
+            <!-- Register Section -->
             <div id="registerSection" style="display: none;">
                 <h3 style="margin-top:0; color:#4e54a4;">สมัครสมาชิก</h3>
                 <form id="registerForm">
@@ -57,10 +68,10 @@
                 </form>
                 <p class="toggle-link">มีบัญชีอยู่แล้ว? <a href="#" id="toLogin">เข้าสู่ระบบ</a></p>
             </div>
-
+            <br>
+            <br>
         </div>
     </div>
-
     <script src="login.js"></script>
 </body>
 </html>

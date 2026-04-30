@@ -6,75 +6,73 @@ const toLogin = document.getElementById('toLogin');
 const API_BASE_URL = 'http://localhost:8080'; // URL ของ FastAPI Backend
 
 //1. Click on text สมัครสมาชิกในหน้า Login
+// 1. Switch to Register
 toRegister.addEventListener('click', (e) => {
     e.preventDefault();
     loginSection.style.display = 'none';
     registerSection.style.display = 'block';
 });
 
-// 2.Click text เข้าสู่ระบบ in Register page
+// 2. Switch to Login
 toLogin.addEventListener('click', (e) => {
     e.preventDefault();
     registerSection.style.display = 'none';
     loginSection.style.display = 'block';
 });
 
-// 3.Press "register" button
+// 3. Register form submit
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     alert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบอีกครั้ง');
-    
-    //Back to login
     registerSection.style.display = 'none';
     loginSection.style.display = 'block';
 });
 
-// 4.Click "Log in" button
+// 4. Login form submit
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    // สมมติว่ามี input field ที่มี id="loginUsername" และ id="loginPassword"
-    const username = document.getElementById('loginUsername').value;
+    const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-    // สมมติว่ามี element สำหรับแสดง error ที่มี id="loginError"
-    const errorElement = document.getElementById('loginError');
-    if (errorElement) errorElement.style.display = 'none';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        const response = await fetch('http://localhost:8080/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
+            body: JSON.stringify({ email, password })
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-            throw new Error(data.detail || 'Login failed. Please check your credentials.');
+            const err = await response.json();
+            throw new Error(err.detail || 'Login failed');
         }
 
-        // เก็บ Token ที่ได้จาก Backend ลงใน localStorage
-        localStorage.setItem('token', data.access_token);
-        
-        // ไปยังหน้า dashboard (index.html)
-        window.location.href = "index.html";
-
+        const data = await response.json();
+        if (data.access_token) {
+            localStorage.setItem('token', data.access_token);
+            window.location.href = "index.html";
+        }
     } catch (error) {
-        console.error('Login error:', error);
-        if (errorElement) {
-            errorElement.textContent = error.message;
-            errorElement.style.display = 'block';
-        }
+        alert(error.message);
     }
 });
 
-//swapping teacher-student role
-const roleBtns = document.querySelectorAll('.role-btn');
-roleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        roleBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    });
-});
+// 5. Google Login
+function handleGoogleLogin(response) {
+    const idToken = response.credential;
+
+    fetch('http://localhost:8080/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access_token) {
+            localStorage.setItem('token', data.access_token);
+            window.location.href = "index.html";
+        } else {
+            alert('Google login failed');
+        }
+    })
+    .catch(() => alert('Google login error'));
+}
