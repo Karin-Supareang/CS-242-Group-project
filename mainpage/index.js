@@ -4,11 +4,7 @@
 
 import { loadSidebar } from './sidebar.js';
 
-const API_CONFIG = {
-    DASHBOARD: './test/data.json',
-    SETTINGS: './test/settings.json',
-    USER: './test/user.json'
-};
+const API_BASE_URL = 'http://localhost:8080'; // URL ของ FastAPI Backend
 
 let appState = {
     tasks: [],
@@ -169,23 +165,50 @@ function setupCollapsible(headerId, listId) {
 }
 
 async function loadApp() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.error("No token found. Redirecting to login page.");
+        // ถ้าไม่มี token ให้กลับไปหน้า login
+        window.location.href = 'login.html';
+        return;
+    }
+
     try {
-        const [settingsRes, dataRes, userRes] = await Promise.all([
-            fetch(API_CONFIG.SETTINGS),
-            fetch(API_CONFIG.DASHBOARD),
-            fetch(API_CONFIG.USER)
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+
+        // ดึงข้อมูล User และ Tasks จาก Backend จริง
+        const [userRes, tasksRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/auth/me`, { headers }),
+            fetch(`${API_BASE_URL}/assignment/get/all`, { headers })
         ]);
 
-        appState.settings = await settingsRes.json();
+        // หาก Token ไม่ถูกต้อง (401) ให้ลบ Token ทิ้งแล้วกลับไปหน้า Login
+        if (userRes.status === 401 || tasksRes.status === 401) {
+            console.error("Authentication failed. Invalid token.");
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        if (!userRes.ok || !tasksRes.ok) {
+            throw new Error(`Failed to fetch data: ${userRes.statusText} & ${tasksRes.statusText}`);
+        }
+
         appState.user = await userRes.json();
-        const data = await dataRes.json();
-        appState.tasks = data.tasks;
+        appState.tasks = await tasksRes.json();
+        // ใช้ข้อมูล settings แบบ static ไปก่อน
+        appState.settings = { ui: { title: "Smart Planner", dashboard_header: "Dashboard" } };
 
         renderUI();
         updateStats();
         renderTasks();
     } catch (error) {
         console.error('Initialization error:', error);
+        // อาจจะแสดงข้อความ Error บนหน้าจอ
+        document.getElementById('boardHeader').textContent = "Error loading data from server.";
     }
 }
 
@@ -216,7 +239,7 @@ function renderUI() {
 
 function updateStats() {
     const total = appState.tasks.length;
-    const completed = appState.tasks.filter(t => t.status_id === 2).length;
+    const completed = appState.tasks.filter(t => t.status === 'completed').length;
     
     const now = new Date();
     const nextWeek = new Date();
@@ -224,7 +247,7 @@ function updateStats() {
     
     const upcoming = appState.tasks.filter(t => {
         const d = new Date(t.deadline);
-        return t.status_id !== 2 && d >= now && d <= nextWeek;
+        return t.status !== 'completed' && d >= now && d <= nextWeek;
     }).length;
 
     document.getElementById('statTotal').textContent = total;
@@ -246,11 +269,13 @@ function renderTasks() {
 
     appState.tasks.forEach(task => {
         const card = createTaskCard(task);
-        if (task.status_id === 0) listBacklog.appendChild(card);
-        else if (task.status_id === 1) listDoing.appendChild(card);
-        else if (task.status_id === 2) {
+        // Backend มีแค่ 'pending' กับ 'completed'
+        // เราจะจัดให้ 'pending' อยู่ใน 'Doing' และ 'completed' อยู่ใน 'Completed'
+        if (task.status === 'completed') {
             listCompleted.appendChild(card);
             completedCount++;
+        } else { // 'pending' or other statuses
+            listDoing.appendChild(card);
         }
     });
 
@@ -262,12 +287,18 @@ function createTaskCard(task) {
     const clone = template.content.cloneNode(true);
     const card = clone.querySelector('.task-card');
     
+    // แปลง status string เป็น number สำหรับ dropdown
+    const statusMap = { 'pending': 1, 'completed': 2 };
+    const statusId = statusMap[task.status] || 0; // 0 for backlog/unknown
+
     // Status Circle (Select with no visible text)
     const select = card.querySelector('.status-dropdown');
-    select.value = task.status_id;
-    select.setAttribute('data-status', task.status_id); 
+    select.value = statusId;
+    select.setAttribute('data-status', statusId); 
     select.addEventListener('change', (e) => {
-        handleStatusChange(task.id, parseInt(e.target.value));
+        // แปลงค่ากลับเป็น string เพื่อส่งไปหา Backend
+        const newStatusString = parseInt(e.target.value) === 2 ? 'completed' : 'pending';
+        handleStatusChange(task.task_id, newStatusString);
     });
 
     // Horizontal Layout matching image 7.png
@@ -278,7 +309,7 @@ function createTaskCard(task) {
                 <h4 class="task-card__title">${task.title}</h4>
             </div>
             <div class="task-card__tags">
-                ${task.tags.map(tagName => `<span class="tag tag--${tagName.toLowerCase()}">${tagName}</span>`).join('')}
+                ${task.categories.map(cat => `<span class="tag" style="background-color: ${cat.color_code}20; color: ${cat.color_code};">${cat.category_name}</span>`).join('')}
             </div>
         </div>
         <span class="task-card__date">${formatDate(task.deadline)}</span>
@@ -287,12 +318,30 @@ function createTaskCard(task) {
     return card;
 }
 
-function handleStatusChange(taskId, newStatusId) {
-    const taskIndex = appState.tasks.findIndex(t => t.id === taskId);
+async function handleStatusChange(taskId, newStatusString) {
+    const token = localStorage.getItem('token');
+    const taskIndex = appState.tasks.findIndex(t => t.task_id === taskId);
     if (taskIndex !== -1) {
-        appState.tasks[taskIndex].status_id = newStatusId;
-        updateStats();
-        renderTasks();
+        try {
+            const response = await fetch(`${API_BASE_URL}/assignment/update/${taskId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatusString })
+            });
+            if (!response.ok) throw new Error('Failed to update status');
+            
+            // อัปเดต state และ re-render
+            appState.tasks[taskIndex].status = newStatusString;
+            renderTasks();
+            updateStats();
+        } catch (error) {
+            console.error("Error updating task status:", error);
+            alert("Failed to update task status.");
+            renderTasks(); // Re-render to revert the change in UI
+        }
     }
 }
 

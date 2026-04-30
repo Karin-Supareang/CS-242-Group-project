@@ -7,7 +7,6 @@ from models.assignment import Assignment
 from schemas.assignment import AssignmentCreate, AssignmentUpdate, AssignmentBase, Assignment as AssignmentSchema # Assuming you'll create these schemas
 from models.category import Category # เพื่อตรวจสอบว่า category_id มีอยู่จริง
 from models.user import User
-from services.GoogleCalendarService import GoogleCalendarManager
 
 class AssignmentManager:
     """
@@ -90,15 +89,6 @@ class AssignmentManager:
         self._db.add(db_assignment)
         self._db.commit()
         self._db.refresh(db_assignment)
-        
-        # Sync ข้อมูลลง Google Calendar ถ้า User มี Token
-        user = self._db.query(User).filter(User.user_id == user_id).first()
-        if user and user.google_access_token:
-            gcal_manager = GoogleCalendarManager()
-            event_id = gcal_manager.sync_assignment(user, db_assignment)
-            if event_id:
-                db_assignment.google_event_id = event_id
-                self._db.commit()
                 
         return db_assignment
 
@@ -131,15 +121,6 @@ class AssignmentManager:
 
         self._db.commit()
         self._db.refresh(db_assignment)
-        
-        # อัปเดตข้อมูลลง Google Calendar ด้วย
-        user = self._db.query(User).filter(User.user_id == user_id).first()
-        if user and user.google_access_token:
-            gcal_manager = GoogleCalendarManager()
-            event_id = gcal_manager.sync_assignment(user, db_assignment)
-            if event_id and event_id != db_assignment.google_event_id:
-                db_assignment.google_event_id = event_id
-                self._db.commit()
                 
         return db_assignment
 
@@ -213,12 +194,6 @@ class AssignmentManager:
         db_assignment = self.get_assignment_by_id(task_id, user_id)
         if not db_assignment:
             raise HTTPException(status_code=404, detail="Assignment not found or not authorized")
-            
-        # ลบออกจาก Google Calendar ด้วยก่อนที่จะลบในฐานข้อมูล
-        user = self._db.query(User).filter(User.user_id == user_id).first()
-        if user and user.google_access_token and db_assignment.google_event_id:
-            gcal_manager = GoogleCalendarManager()
-            gcal_manager.delete_event(user, db_assignment.google_event_id)
         
         self._db.delete(db_assignment)
         self._db.commit()

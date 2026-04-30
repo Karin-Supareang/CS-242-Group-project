@@ -116,18 +116,6 @@ async def login_via_google(request: Request):
     # ล็อกอินปกติไม่ต้องขอ offline token และไม่ต้องขอ consent ซ้ำ
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@router.get("/login/google/calendar", summary="เข้าสู่ระบบด้วย Google (พร้อม Calendar)")
-async def login_via_google_calendar(request: Request):
-    redirect_uri = request.url_for('auth_google_callback')
-    # ขอสิทธิ์ Calendar พิเศษ, บังคับขอ offline token และ consent
-    return await oauth.google.authorize_redirect(
-        request, 
-        redirect_uri, 
-        access_type='offline', 
-        prompt='consent',
-        scope='openid email profile https://www.googleapis.com/auth/calendar'
-    )
-
 @router.get("/google/callback", summary="Callback URL สำหรับ Google Login") # เอา response_model ออกเพราะเราจะ Redirect
 async def auth_google_callback(request: Request, user_manager: UserManager = Depends(get_user_manager)):
     try:
@@ -151,13 +139,6 @@ async def auth_google_callback(request: Request, user_manager: UserManager = Dep
         generated_username = email
         new_user = UserBase(email=email, username=generated_username, name=user_info.get("name")) # ใช้ UserBase แทน UserCreate
         db_user = user_manager.create_user(new_user)
-        
-    # อัปเดต Token ของ Google ลง Database (เพื่อให้ Backend เอาไปใช้สร้าง Calendar Event ภายหลัง)
-    if 'access_token' in token:
-        db_user.google_access_token = token['access_token']
-    if 'refresh_token' in token:
-        db_user.google_refresh_token = token['refresh_token']
-    user_manager._db.commit() # Save token ลง DB
 
     # สร้าง JWT Token
     access_token = create_access_token(data={"sub": str(db_user.user_id)}) # Convert user_id to string for JWT sub claim
