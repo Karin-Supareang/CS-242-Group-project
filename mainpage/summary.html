@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summary - vFAST</title>
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="light-theme">
+    <div class="layout">
+        <div id="sidebar-placeholder"></div>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 class="page-title">Summary (Pandas Analysis)</h1>
+                <div class="user-info">
+                    <span class="user-name" id="userName">...</span>
+                    <div class="user-avatar" id="userAvatar">
+                        <img src="" alt="Profile" id="imgAvatar" style="display:none;">
+                        <span id="textAvatar">..</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="board" style="max-width: 800px; margin: 0 auto;">
+                <div class="board__header">
+                    <h2 class="board__title">📊 ภาพรวมสถานะงานในระบบ</h2>
+                </div>
+                
+                <p style="color: var(--text-muted); margin-bottom: 30px;">
+                    ข้อมูลสรุปด้านล่างนี้ถูกประมวลผลผ่าน <strong>Pandas DataFrame</strong> จากฝั่ง Backend API
+                </p>
+
+                <div class="stats-grid" id="summaryContainer">
+                    <!-- ข้อมูลจะถูกโหลดมาใส่ที่นี่ -->
+                    <div style="text-align: center; grid-column: 1 / -1; padding: 40px; color: var(--text-muted);">
+                        กำลังวิเคราะห์ข้อมูล...
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="overlay" id="overlay" aria-hidden="true"></div>
+    </div>
+
+    <script src="summary.js" type="module"></script>
+</body>
+</html>

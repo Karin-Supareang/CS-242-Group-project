@@ -11,9 +11,7 @@ CREATE TABLE "user" (
     username VARCHAR UNIQUE,
     name VARCHAR,
     hashed_password VARCHAR,
-    notification BOOLEAN DEFAULT TRUE,
-    google_access_token VARCHAR,
-    google_refresh_token VARCHAR
+    notification BOOLEAN DEFAULT TRUE
 );
 
 -- 3. สร้างตาราง category
@@ -36,8 +34,7 @@ CREATE TABLE assignment (
     percentage INTEGER,
     file_data BYTEA,
     file_name VARCHAR,
-    file_mimetype VARCHAR,
-    google_event_id VARCHAR
+    file_mimetype VARCHAR
 );
 
 -- 5. สร้างตารางเชื่อม (Many-to-Many)

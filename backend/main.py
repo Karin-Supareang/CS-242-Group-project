@@ -6,6 +6,7 @@ from controllers.authController import router as auth_router
 from controllers.categoryController import router as category_router
 from controllers.assignmentController import router as assignment_router
 from controllers.notificationController import router as notification_router
+from controllers import authController, dashboardController 
 from fastapi.middleware.cors import CORSMiddleware
 from services.AutomaticService import check_deadlines_and_notify
 
@@ -42,3 +43,4 @@ app.include_router(auth_router)
 app.include_router(category_router)
 app.include_router(assignment_router)
 app.include_router(notification_router)
+app.include_router(dashboardController.router)
