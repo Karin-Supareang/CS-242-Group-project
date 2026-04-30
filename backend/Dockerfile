@@ -9,5 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 # ตั้งค่า PYTHONPATH เพื่อให้ Python หาโมดูลภายในโปรเจกต์เจอ
 ENV PYTHONPATH "${PYTHONPATH}:/app"
-# Render จะส่ง Environment Variable ชื่อ PORT มาให้ (ค่าเริ่มต้นมักเป็น 10000)
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# ใช้ตัวแปร BACKEND_PORT จาก .env (ถ้าไม่มีจะใช้ 8080 เป็นค่าเริ่มต้น)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${BACKEND_PORT:-8080}"]
