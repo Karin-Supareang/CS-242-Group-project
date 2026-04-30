@@ -8,7 +8,24 @@
    ```bash
    cd backend
    python -m venv .venv
-   source .venv/bin/activate  # สำหรับ Windows ใช้ .venv\Scripts\activate
+   ```
+
+   Next, activate the virtual environment. The command depends on your operating system and terminal:
+   - **On macOS/Linux (bash/zsh):**
+     ```bash
+     source .venv/bin/activate
+     ```
+   - **On Windows (Command Prompt):**
+     ```cmd
+     .venv\Scripts\activate
+     ```
+   - **On Windows (PowerShell):**
+     ```powershell
+     .venv\Scripts\Activate.ps1
+     ```
+
+   Finally, install the required packages:
+   ```bash
    python -m pip install -r requirements.txt
    ```
 
@@ -50,4 +67,3 @@ python3 -m http.server 3000
 7. กด `location.reload();` เพื่อดูผลลัพธ์ข้อมูลจริงจาก Database
 
 ---
-
