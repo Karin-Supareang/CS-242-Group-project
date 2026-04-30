@@ -134,10 +134,8 @@ async def auth_google_callback(request: Request, user_manager: UserManager = Dep
 
     db_user = user_manager.get_user_by_email(email)
     if not db_user:
-        # ใช้ email เต็มๆ เป็น username สำหรับ Google Login
-        # เนื่องจาก email เป็น unique อยู่แล้ว username ก็จะ unique ด้วย
-        generated_username = email
-        new_user = UserBase(email=email, username=generated_username, name=user_info.get("name")) # ใช้ UserBase แทน UserCreate
+        # ไม่ต้องสร้าง username อัตโนมัติอีกต่อไป (ให้เป็น None ไปเลย)
+        new_user = UserBase(email=email, name=user_info.get("name")) 
         db_user = user_manager.create_user(new_user)
 
     # สร้าง JWT Token

@@ -220,7 +220,8 @@ function renderUI() {
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
     // Greeting
-    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
+    const displayName = user.name || user.username || user.email.split('@')[0];
+    document.getElementById('userName').textContent = `Hello, ${displayName}!`;
     
     // Avatar handling
     const imgAvatar = document.getElementById('imgAvatar');

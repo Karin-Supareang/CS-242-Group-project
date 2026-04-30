@@ -57,6 +57,7 @@ async def check_deadlines_and_notify():
                         if not task.deadline:
                             continue
                         
+                        display_name = user.name or user.username or user.email.split('@')[0]
                         delta = task.deadline - now
                         hours_left = delta.total_seconds() / 3600.0
 
@@ -66,16 +67,16 @@ async def check_deadlines_and_notify():
                         # เช็กเงื่อนไขเวลา (ใช้ช่วงกว้าง 1 ชม. เพราะ loop รันทุก 1 ชม. จะได้ไม่ส่งซ้ำ)
                         if 23 <= hours_left <= 24:
                             subject = f"[แจ้งเตือน] งาน '{task.title}' จะถึงกำหนดส่งในอีก 1 วัน!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nงาน '{task.title}' กำลังจะถึงกำหนดส่งในอีก 1 วัน!\n📅 กำหนดส่ง: {task.deadline.strftime('%d/%m/%Y %H:%M')}\n\nอย่าลืมเข้าไปจัดการงานให้เรียบร้อยนะครับ\n\nจากระบบ Smart Academic Plan"
+                            message = f"สวัสดีคุณ {display_name},\n\nงาน '{task.title}' กำลังจะถึงกำหนดส่งในอีก 1 วัน!\n📅 กำหนดส่ง: {task.deadline.strftime('%d/%m/%Y %H:%M')}\n\nอย่าลืมเข้าไปจัดการงานให้เรียบร้อยนะครับ\n\nจากระบบ Smart Academic Plan"
                         elif 5 <= hours_left <= 6:
                             subject = f"[ด่วน] งาน '{task.title}' เหลือเวลาอีก 6 ชั่วโมงสุดท้าย!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nงาน '{task.title}' เหลือเวลาอีก 6 ชั่วโมงสุดท้ายแล้ว! รีบจัดการให้เสร็จนะครับ!"
+                            message = f"สวัสดีคุณ {display_name},\n\nงาน '{task.title}' เหลือเวลาอีก 6 ชั่วโมงสุดท้ายแล้ว! รีบจัดการให้เสร็จนะครับ!"
                         elif 3 <= hours_left <= 4:
                             subject = f"[ด่วนมาก] งาน '{task.title}' เหลือเวลาอีก 4 ชั่วโมงสุดท้าย!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nงาน '{task.title}' เหลือเวลาอีก 4 ชั่วโมงสุดท้าย!"
+                            message = f"สวัสดีคุณ {display_name},\n\nงาน '{task.title}' เหลือเวลาอีก 4 ชั่วโมงสุดท้าย!"
                         elif 1 <= hours_left <= 2:
                             subject = f"[โคตรด่วน] งาน '{task.title}' เหลือเวลาอีก 2 ชั่วโมงสุดท้าย!!!"
-                            message = f"สวัสดีคุณ {user.name or user.username},\n\nไฟลนก้นแล้ว! งาน '{task.title}' เหลือเวลาอีกแค่ 2 ชั่วโมงสุดท้าย! ปั่นด่วน!"
+                            message = f"สวัสดีคุณ {display_name},\n\nไฟลนก้นแล้ว! งาน '{task.title}' เหลือเวลาอีกแค่ 2 ชั่วโมงสุดท้าย! ปั่นด่วน!"
 
                         if subject and message:
                             await email_manager.send_email(user.email, subject, message)

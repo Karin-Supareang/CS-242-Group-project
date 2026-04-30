@@ -17,7 +17,8 @@ async def test_email_notification(db: Session = Depends(get_db), user_id: int = 
         
     email_manager = EmailManager()
     subject = "ทดสอบระบบแจ้งเตือน Smart Academic Plan"
-    body = f"สวัสดีคุณ {user.name or user.username},\n\nอีเมลฉบับนี้ส่งจากระบบ Smart Academic Plan เพื่อทดสอบการรับการแจ้งเตือนทางอีเมลครับ!"
+    display_name = user.name or user.username or user.email.split('@')[0]
+    body = f"สวัสดีคุณ {display_name},\n\nอีเมลฉบับนี้ส่งจากระบบ Smart Academic Plan เพื่อทดสอบการรับการแจ้งเตือนทางอีเมลครับ!"
     
     await email_manager.send_email(user.email, subject, body)
     return {"message": f"Test email sent to {user.email} successfully"}

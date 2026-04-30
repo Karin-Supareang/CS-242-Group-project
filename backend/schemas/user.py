@@ -4,7 +4,7 @@ from typing import Optional
 # ข้อมูลพื้นฐาน
 class UserBase(BaseModel):
     email: str # Required for UserBase and UserCreate
-    username: str # Required for UserBase and UserCreate
+    username: Optional[str] = None
     name: Optional[str] = None
     class Config:
         json_schema_extra = {
@@ -19,7 +19,7 @@ class UserCreate(UserBase):
 
     @validator('username')
     def username_cannot_contain_at(cls, v):
-        if '@' in v: # Check if username contains '@'
+        if v is not None and '@' in v: # Check if username contains '@'
             raise ValueError('Username cannot contain "@" symbol')
         return v
 

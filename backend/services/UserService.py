@@ -43,6 +43,8 @@ class UserManager:
         """
         ดึงข้อมูล User จาก username
         """
+        if not username:
+            return None
         return self._db.query(User).filter(func.lower(User.username) == username.lower()).first()
 
     # Getter method
@@ -59,7 +61,7 @@ class UserManager:
         """
         if self.get_user_by_email(user_data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
-        if self.get_user_by_username(user_data.username):
+        if user_data.username and self.get_user_by_username(user_data.username):
             raise HTTPException(status_code=400, detail="Username already taken")
         
         hashed_pwd = None
@@ -69,7 +71,7 @@ class UserManager:
         
         db_user = User(
             email=user_data.email.lower(),
-            username=user_data.username.lower(), # บังคับให้เป็นตัวพิมพ์เล็กเสมอ
+            username=user_data.username.lower() if user_data.username else None,
             name=user_data.name,
             hashed_password=hashed_pwd,
             notification=True # กำหนดค่าเริ่มต้น
