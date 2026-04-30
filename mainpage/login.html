@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vFAST - Login & Register</title>
     <link rel="stylesheet" href="login.css">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="login-container">
@@ -32,11 +31,9 @@
                 <br>
                 <!-- Google Login Button -->
                 <div class="google-login-wrapper">
-                    <div id="g_id_onload"
-                         data-client_id="YOUR_GOOGLE_CLIENT_ID"
-                         data-callback="handleGoogleLogin">
-                    </div>
-                    <div class="g_id_signin" data-type="standard" data-width="100%"></div>
+                    <button type="button" class="submit-btn" style="background-color: #4285F4;" onclick="handleGoogleLogin()">
+                        Login with Google
+                    </button>
                 </div>
 
                 <p class="toggle-link">ยังไม่มีบัญชี? <a href="#" id="toRegister">สมัครสมาชิก</a></p>
