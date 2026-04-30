@@ -157,22 +157,7 @@ function validateEmail(email) {
 }
 
 // 5. Google Login
-window.handleGoogleLogin = function(response) {
-    const idToken = response.credential;
-
-    fetch('http://localhost:8080/auth/login/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: idToken })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.access_token) {
-            localStorage.setItem('token', data.access_token);
-            window.location.href = "index.html";
-        } else {
-            alert('Google login failed');
-        }
-    })
-    .catch(() => alert('Google login error'));
+window.handleGoogleLogin = function() {
+    // เปลี่ยนเส้นทางไปที่ Backend เพื่อเข้าสู่กระบวนการ Google OAuth
+    window.location.href = `${API_BASE_URL}/auth/login/google`;
 }
