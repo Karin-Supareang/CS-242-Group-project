@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlToken = urlParams.get('token');
     if (urlToken) {
         localStorage.setItem('token', urlToken);
+        appState.token = urlToken;
         // เคลียร์ Token ออกจาก URL เพื่อไม่ให้รกและป้องกันคนอื่นก๊อปปี้ไป
         window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -200,6 +201,9 @@ async function loadApp() {
         return;
     }
 
+    // อัปเดตตัวแปรใน State ให้เป็นค่าล่าสุดเสมอ ป้องกันกรณี Token เพิ่งถูกเซ็ตใหม่จาก URL
+    appState.token = token;
+
     try {
         const [settingsRes, dataRes] = await Promise.all([
             fetch(API_CONFIG.SETTINGS),
@@ -242,7 +246,8 @@ function renderUI() {
     document.getElementById('pageTitle').textContent = ui.dashboard_header;
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
-    const displayName = user.name || user.username || 'Guest';
+    // ยึดตาม name (ชื่อ-นามสกุล) ก่อน ถ้าไม่มีค่อยใช้ username หรือคำหน้า @ ของอีเมล
+    const displayName = user.name || user.username || (user.email ? user.email.split('@')[0] : 'Guest');
     document.getElementById('userName').textContent = appState.token ? `Hello, ${displayName}!` : 'Hello, Guest!';
     
     const imgAvatar = document.getElementById('imgAvatar');

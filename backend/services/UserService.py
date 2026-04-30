@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from passlib.context import CryptContext
 from typing import Optional
 from models.user import User
-from schemas.user import UserBase
+from schemas.user import UserBase, UserUpdate
 from models.category import Category
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -118,3 +118,24 @@ class UserManager:
         if not self._verify_password(password, user.hashed_password):
             return None # รหัสผ่านไม่ตรงกัน
         return user
+
+    # Business logic method (Update User)
+    def update_user(self, user_id: int, update_data: UserUpdate) -> User | None:
+        """
+        อัปเดตข้อมูล User (ชื่อ และ Username)
+        """
+        db_user = self.get_user_by_id(user_id)
+        if not db_user:
+            return None
+        
+        if update_data.username is not None and update_data.username.lower() != (db_user.username.lower() if db_user.username else ""):
+            if self.get_user_by_username(update_data.username):
+                raise HTTPException(status_code=400, detail="Username already taken")
+            db_user.username = update_data.username.lower()
+            
+        if update_data.name is not None:
+            db_user.name = update_data.name
+            
+        self._db.commit()
+        self._db.refresh(db_user)
+        return db_user

@@ -168,7 +168,7 @@ function renderHeader() {
     }
 
     const { data } = userState;
-    const displayName = data.name || data.username || 'User';
+    const displayName = data.name || data.username || (data.email ? data.email.split('@')[0] : 'User');
     
     if (userNameEl) userNameEl.textContent = `Welcome, ${displayName}!`;
     
@@ -207,7 +207,7 @@ function renderGuestDropdown(menu) {
 }
 
 function renderUserDropdown(menu, user) {
-    const displayName = user.name || user.username || 'User';
+    const displayName = user.name || user.username || (user.email ? user.email.split('@')[0] : 'User');
     menu.innerHTML = `
         <div class="user-dropdown-header">
             <div class="avatar">${displayName.substring(0, 2).toUpperCase()}</div>
@@ -264,7 +264,7 @@ function renderProfileTab() {
         `;
     } else {
         const user = userState.data || { name: '', username: '', email: '' };
-        const displayName = user.name || user.username || 'US';
+        const displayName = user.name || user.username || (user.email ? user.email.split('@')[0] : 'US');
         const avatarUrl = user.avatar_url ? user.avatar_url : '';
         
         board.innerHTML = `
@@ -337,8 +337,34 @@ function renderProfileTab() {
             }
         });
 
-        document.getElementById('btnSaveProfile')?.addEventListener('click', () => {
-            alert("บันทึกข้อมูลเรียบร้อยแล้ว! (จำลองการทำงาน)");
+        document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
+            const newName = document.getElementById('fieldName').value.trim();
+            const newUsername = document.getElementById('fieldUsername').value.trim();
+
+            try {
+                const res = await fetch(API_CONFIG.AUTH_ME, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${userState.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name: newName || null, 
+                        username: newUsername || null 
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'อัปเดตโปรไฟล์ไม่สำเร็จ');
+                }
+
+                userState.data = await res.json();
+                alert("บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว!");
+                renderHeader(); // อัปเดตชื่อที่มุมขวาบนให้เปลี่ยนทันที
+            } catch (error) {
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            }
         });
 
         document.getElementById('btnOpenDelete')?.addEventListener('click', openDeleteModal);

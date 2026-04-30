@@ -8,7 +8,7 @@ from authlib.integrations.starlette_client import OAuth
 from database import SessionLocal
 from services.UserService import UserManager # Import the UserManager class
 # ดึง Schema จากโฟลเดอร์ schemas
-from schemas.user import UserCreate, UserLogin, User, UserBase, UserSignupResponse # เพิ่ม UserSignupResponse
+from schemas.user import UserCreate, UserLogin, User, UserBase, UserSignupResponse, UserUpdate
 from schemas.token import Token # เพิ่มการ import Token schema
 from auth_utils import create_access_token, verify_token # เพิ่มการ import ฟังก์ชันสร้าง JWT และ verify_token
 from sqlalchemy.orm import Session
@@ -172,3 +172,14 @@ async def read_users_me(
         raise HTTPException(status_code=404, detail="User not found")
     return user
     
+@router.patch("/me", response_model=User, summary="อัปเดตข้อมูลผู้ใช้ปัจจุบัน")
+async def update_users_me(
+    update_data: UserUpdate,
+    user_id: int = Depends(get_current_user_id),
+    user_manager: UserManager = Depends(get_user_manager)
+):
+    """อัปเดตโปรไฟล์ของผู้ใช้ที่กำลังล็อกอินอยู่"""
+    updated_user = user_manager.update_user(user_id, update_data)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated_user

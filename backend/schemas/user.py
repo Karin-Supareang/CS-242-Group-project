@@ -67,3 +67,8 @@ class UserSignupResponse(BaseModel):
     message: str
     user: User
     categories: list[str] # เพิ่มฟิลด์สำหรับส่งรายชื่อ Category กลับไป
+
+# ข้อมูลสำหรับอัปเดตโปรไฟล์
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    username: Optional[str] = None

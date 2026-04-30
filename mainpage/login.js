@@ -99,9 +99,33 @@ document.getElementById('registerForm').addEventListener('submit', async functio
 
     if (!isEmailValid || !isPasswordValid) return;
 
-    alert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบอีกครั้ง');
-    registerSection.style.display = 'none';
-    loginSection.style.display = 'block';
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: email,
+                name: `${firstName} ${lastName}`.trim(), // นำชื่อและนามสกุลมารวมกันแล้วส่งไป
+                password: password,
+                confirm_password: password
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Signup failed');
+        }
+
+        alert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบอีกครั้ง');
+        registerSection.style.display = 'none';
+        loginSection.style.display = 'block';
+        document.getElementById('registerForm').reset(); // ล้างฟอร์ม
+    } catch (error) {
+        showError(errBox, error.message);
+    }
 });
 
 // 4. Login form submit

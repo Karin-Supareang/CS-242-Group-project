@@ -13,25 +13,53 @@ import { loadSidebar } from './sidebar.js';
 
 const API_CONFIG = {
     DASHBOARD: './test/data.json',
-    USER: './test/user.json'
+    USER: './test/user.json',
+    AUTH_ME: 'http://localhost:8080/auth/me'
 };
 
 let allTasks = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // เช็ก Token ก่อนโหลดหน้าเว็บ
+    let token = localStorage.getItem('token');
+    if (!token) {
+        const cookieMatch = document.cookie.match(/(?:^|; )(?:access_)?token=([^;]*)/);
+        if (cookieMatch) {
+            token = cookieMatch[1];
+            localStorage.setItem('token', token);
+        }
+    }
+
+    // ถ้าไม่มี Token ให้เด้งกลับไปหน้า Login ทันที
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     await loadSidebar('notification');
     await loadData();
     initFilter();
 });
 
 async function loadData() {
+    const token = localStorage.getItem('token');
     try {
         const [dataRes, userRes] = await Promise.all([
             fetch(API_CONFIG.DASHBOARD),
-            fetch(API_CONFIG.USER)
+            fetch(API_CONFIG.AUTH_ME, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
         ]);
         const data = await dataRes.json();
-        const user = await userRes.json();
+        
+        // ถ้าดึงข้อมูลจาก API จริงสำเร็จ ให้ใช้ข้อมูลจริง ถ้าไม่สำเร็จ (เช่น Token หมดอายุ) ให้ใช้ค่าจำลองไปก่อน
+        let user;
+        if (userRes.ok) {
+            user = await userRes.json();
+        } else {
+            user = await (await fetch(API_CONFIG.USER)).json();
+        }
+        
         allTasks = data.tasks;
         renderUser(user);
         renderNotifications('all');
@@ -41,7 +69,8 @@ async function loadData() {
 }
 
 function renderUser(user) {
-    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
+    const displayName = user.name || user.username || (user.email ? user.email.split('@')[0] : 'Guest');
+    document.getElementById('userName').textContent = `Hello, ${displayName}!`;
 
     const imgAvatar = document.getElementById('imgAvatar');
     const textAvatar = document.getElementById('textAvatar');
@@ -50,7 +79,8 @@ function renderUser(user) {
         imgAvatar.style.display = 'block';
         if (textAvatar) textAvatar.style.display = 'none';
     } else if (textAvatar) {
-        textAvatar.textContent = user.initials || 'U';
+        // ดึงตัวอักษร 2 ตัวแรกจากชื่อมาทำเป็นรูปโปรไฟล์แบบข้อความ
+        textAvatar.textContent = (user.initials || displayName.substring(0, 2)).toUpperCase();
         textAvatar.style.display = 'block';
     }
 }
