@@ -1,122 +1,87 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vFAST - Settings</title>
+    <!-- Import Design System -->
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="index.css">
+    <!-- Import Specific Settings Overrides -->
     <link rel="stylesheet" href="setting.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
-
 <body class="light-theme">
-    <div id="successBubble" class="success-bubble">บันทึกแล้ว</div>
+    <div class="layout">
+        <!-- Collapsible Sidebar (Dynamic) -->
+        <div id="sidebar-placeholder"></div>
 
-    <div class="settings-container">
-        <aside class="sidebar">
-            <div class="logo">vFAST</div>
-            <nav>
-                <button class="nav-item active" onclick="checkNavigation('profile')">👤 Profile</button>
-                <button class="nav-item" onclick="checkNavigation('theme')">🎨 Theme</button>
-            </nav>
-            <div class="bottom-nav">
-                <button class="logout-btn" onclick="location.href='login.html'">↪ Log out</button>
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <div class="settings-container">
+                <header class="top-bar">
+                    <h1 class="page-title" id="pageTitle">Settings</h1>
+                    <div class="user-info user-dropdown-container" id="userDropdownBtn">
+                        <span class="user-name" id="userName">...</span>
+                        <div class="user-avatar" id="userAvatar">
+                            <img src="" alt="Profile" id="imgAvatar" style="display: none;">
+                            <span id="textAvatar">..</span>
+                        </div>
+                        <!-- Dropdown Menu -->
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <!-- Content injected via JS -->
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Tabs Navigation -->
+                <div class="settings-tabs">
+                    <button class="nav-item active" id="tabBtnProfile">👤 Profile</button>
+                    <button class="nav-item" id="tabBtnTheme">🎨 Theme</button>
+                </div>
+
+                <!-- Profile Tab -->
+                <section id="profile-tab" class="tab-content active">
+                    <div class="board settings-board" id="profileBoard">
+                        <!-- Profile content will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Theme Tab -->
+                <section id="theme-tab" class="tab-content">
+                    <div class="board settings-board">
+                        <h3 class="section-title" style="margin-bottom: 24px;">Change Theme</h3>
+                        <div class="theme-options">
+                            <div class="theme-box light" id="themeBoxLight">
+                                <div class="preview"></div>
+                                <span>Light</span>
+                            </div>
+                            <div class="theme-box dark" id="themeBoxDark">
+                                <div class="preview"></div>
+                                <span>Dark</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </aside>
-
-        <main class="content">
-            <header>
-                <h2>Settings</h2>
-                <a href="index.html" class="home-link">Home</a>
-            </header>
-
-            <section id="profile-tab" class="tab-content active">
-                <div class="card">
-                    <div class="profile-header">
-                        <div class="avatar">JD</div>
-                        <button class="edit-pic-btn">Edit picture</button>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>ชื่อ</label>
-                            <div class="input-with-btn">
-                                <input type="text" id="nameInput" value="Jane" readonly>
-                                <button class="inner-btn" onclick="enableEdit('nameInput')">เปลี่ยน</button>
-                            </div>
-                            <span id="warn-nameInput" class="unsaved-warn">*มีการเปลี่ยนแปลงที่ยังไม่บันทึก</span>
-                        </div>
-                        <div class="input-group">
-                            <label>Username</label>
-                            <input type="text" value="JaneDoe">
-                        </div>
-                        <div class="input-group">
-                            <label>Email</label>
-                            <div class="input-with-btn">
-                                <input type="email" id="emailInput" value="example@gmail.com" readonly>
-                                <button class="inner-btn" onclick="enableEdit('emailInput')">เปลี่ยน</button>
-                            </div>
-                            <span id="warn-emailInput" class="unsaved-warn">*มีการเปลี่ยนแปลงที่ยังไม่บันทึก</span>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Password</label>
-                            <div class="input-with-btn">
-                                <input type="password" id="passInput" value="******" readonly>
-                                <button class="inner-btn" onclick="enableEdit('passInput')">เปลี่ยน</button>
-                            </div>
-                            <span id="warn-passInput" class="unsaved-warn">*มีการเปลี่ยนแปลงที่ยังไม่บันทึก</span>
-                        </div>
-                    </div>
-
-                    <div class="actions">
-                        <button class="save-btn" id="saveAllBtn" onclick="saveData()">บันทึก</button>
-                        <button class="delete-btn" onclick="openDeleteModal()">Delete profile and log out</button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="theme-tab" class="tab-content">
-                <div class="card">
-                    <h3>Change Theme</h3>
-                    <div class="theme-options">
-                        <div class="theme-box light active" onclick="setTheme('light')">
-                            <div class="preview"></div>
-                            <span>Light</span>
-                        </div>
-                        <div class="theme-box dark" onclick="setTheme('dark')">
-                            <div class="preview"></div>
-                            <span>Dark</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </main>
     </div>
 
-    <div id="deleteModal" class="modal-overlay">
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="overlay delete-overlay">
         <div class="modal-card">
             <div class="modal-icon">⚠️</div>
             <h3>คุณแน่ใจใช่ไหม?</h3>
             <p>การลบโปรไฟล์จะทำให้ข้อมูลทั้งหมดหายไปและไม่สามารถกู้คืนได้</p>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-confirm-delete" onclick="confirmDelete()">Delete</button>
+                <button class="btn-secondary" id="btnCancelDelete">Cancel</button>
+                <button class="btn-danger" id="btnConfirmDelete">Delete</button>
             </div>
         </div>
     </div>
 
-    <div id="unsavedOverlay" class="modal-overlay">
-        <div class="modal-card">
-            <h3>มีการเปลี่ยนแปลงที่ยังไม่ได้รับการบันทึก</h3>
-            <p>คุณต้องการบันทึกการเปลี่ยนแปลงก่อนออกจากหน้านี้หรือไม่?</p>
-            <div class="modal-actions">
-                <button class="btn-outline-purple" onclick="closeUnsavedModal()">Cancel</button>
-                <button class="btn-purple" onclick="saveAndLeave()">Save change and leave</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="setting.js"></script>
+    <script src="setting.js" type="module"></script>
 </body>
-
 </html>

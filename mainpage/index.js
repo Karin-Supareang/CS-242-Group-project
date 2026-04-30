@@ -4,26 +4,52 @@
 
 import { loadSidebar } from './sidebar.js';
 
+// Apply saved theme immediately on load to prevent flash
+(function () {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(saved + '-theme');
+})();
+
 const API_CONFIG = {
     DASHBOARD: './test/data.json',
     SETTINGS: './test/settings.json',
-    USER: './test/user.json'
+    USER: './test/user.json',
+    AUTH_ME: 'http://localhost:8080/auth/me'
 };
 
 let appState = {
     tasks: [],
     settings: {},
-    user: {}
+    user: {},
+    token: localStorage.getItem('token')
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadSidebar('home');
     initUI();
-    loadApp();
+    await loadApp();
 });
 
 function initUI() {
     const overlay = document.getElementById('overlay');
+    const userDropdownBtn = document.getElementById('userDropdownBtn');
+    const userDropdownMenu = document.getElementById('userDropdownMenu');
+
+    // Dropdown Logic
+    if (userDropdownBtn && userDropdownMenu) {
+        userDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdownMenu.classList.toggle('show');
+            renderDropdown();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!userDropdownBtn.contains(e.target)) {
+                userDropdownMenu.classList.remove('show');
+            }
+        });
+    }
 
     // Add Task Sidebar Elements
     const btnOpenAddTask = document.getElementById('btnOpenAddTask');
@@ -57,14 +83,13 @@ function initUI() {
     });
 
     // Tag Selection Logic
-    function bindTagClick(tag) {
+    const bindTagClick = (tag) => {
         tag.addEventListener('click', () => {
             tag.classList.toggle('selected');
         });
-    }
+    };
 
-    const selectableTags = document.querySelectorAll('.tag--selectable');
-    selectableTags.forEach(bindTagClick);
+    document.querySelectorAll('.tag--selectable').forEach(bindTagClick);
 
     // New Tag Logic
     const btnNewTag = document.getElementById('btnNewTag');
@@ -77,7 +102,6 @@ function initUI() {
                 newTag.className = `tag tag--custom tag--selectable selected`;
                 newTag.textContent = tagName.trim();
                 
-                // Generate a random pastel color for the tag
                 const hue = Math.floor(Math.random() * 360);
                 newTag.style.backgroundColor = `hsla(${hue}, 80%, 60%, 0.15)`;
                 newTag.style.color = `hsl(${hue}, 70%, 40%)`;
@@ -93,15 +117,9 @@ function initUI() {
     const fileInput = document.getElementById('fileInput');
     const uploadText = document.getElementById('uploadText');
     if (uploadArea && fileInput && uploadText) {
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
+        uploadArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                uploadText.textContent = fileInput.files[0].name;
-            } else {
-                uploadText.textContent = 'อัปโหลดไฟล์';
-            }
+            uploadText.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : 'อัปโหลดไฟล์';
         });
     }
 
@@ -140,17 +158,13 @@ function initUI() {
             document.getElementById('inputTaskNote').value = '';
             if (fileInput) fileInput.value = '';
             if (uploadText) uploadText.textContent = 'อัปโหลดไฟล์';
-            document.querySelectorAll('.tag-selector .tag--selectable.selected').forEach(tag => {
-                tag.classList.remove('selected');
-            });
+            document.querySelectorAll('.tag-selector .tag--selectable.selected').forEach(tag => tag.classList.remove('selected'));
             
-            // Close sidebar
             if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
             overlay.classList.remove('overlay--active');
         });
     }
 
-    // Setup Collapsible Sections for ALL categories
     setupCollapsible('toggleBacklog', 'listBacklog');
     setupCollapsible('toggleDoing', 'listDoing');
     setupCollapsible('toggleCompleted', 'listCompleted');
@@ -159,7 +173,6 @@ function initUI() {
 function setupCollapsible(headerId, listId) {
     const header = document.getElementById(headerId);
     const list = document.getElementById(listId);
-    
     if (header && list) {
         header.addEventListener('click', () => {
             header.classList.toggle('section-header--collapsed');
@@ -170,16 +183,29 @@ function setupCollapsible(headerId, listId) {
 
 async function loadApp() {
     try {
-        const [settingsRes, dataRes, userRes] = await Promise.all([
+        const [settingsRes, dataRes] = await Promise.all([
             fetch(API_CONFIG.SETTINGS),
-            fetch(API_CONFIG.DASHBOARD),
-            fetch(API_CONFIG.USER)
+            fetch(API_CONFIG.DASHBOARD)
         ]);
 
         appState.settings = await settingsRes.json();
-        appState.user = await userRes.json();
         const data = await dataRes.json();
         appState.tasks = data.tasks;
+
+        // User Loading
+        if (appState.token) {
+            try {
+                const res = await fetch(API_CONFIG.AUTH_ME, {
+                    headers: { 'Authorization': `Bearer ${appState.token}` }
+                });
+                if (res.ok) appState.user = await res.json();
+                else appState.user = await (await fetch(API_CONFIG.USER)).json();
+            } catch (e) {
+                appState.user = await (await fetch(API_CONFIG.USER)).json();
+            }
+        } else {
+            appState.user = { name: 'Guest', initials: 'G' };
+        }
 
         renderUI();
         updateStats();
@@ -196,10 +222,9 @@ function renderUI() {
     document.getElementById('pageTitle').textContent = ui.dashboard_header;
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
-    // Greeting
-    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
+    const displayName = user.name || user.username || 'Guest';
+    document.getElementById('userName').textContent = appState.token ? `Hello, ${displayName}!` : 'Hello, Guest!';
     
-    // Avatar handling
     const imgAvatar = document.getElementById('imgAvatar');
     const textAvatar = document.getElementById('textAvatar');
     
@@ -208,7 +233,7 @@ function renderUI() {
         imgAvatar.style.display = 'block';
         textAvatar.style.display = 'none';
     } else if (textAvatar) {
-        textAvatar.textContent = user.initials || "RN";
+        textAvatar.textContent = (user.initials || displayName.substring(0, 2)).toUpperCase();
         if (imgAvatar) imgAvatar.style.display = 'none';
         textAvatar.style.display = 'block';
     }
@@ -243,7 +268,6 @@ function renderTasks() {
     listCompleted.innerHTML = '';
 
     let completedCount = 0;
-
     appState.tasks.forEach(task => {
         const card = createTaskCard(task);
         if (task.status_id === 0) listBacklog.appendChild(card);
@@ -253,7 +277,6 @@ function renderTasks() {
             completedCount++;
         }
     });
-
     countCompleted.textContent = completedCount;
 }
 
@@ -262,15 +285,11 @@ function createTaskCard(task) {
     const clone = template.content.cloneNode(true);
     const card = clone.querySelector('.task-card');
     
-    // Status Circle (Select with no visible text)
     const select = card.querySelector('.status-dropdown');
     select.value = task.status_id;
     select.setAttribute('data-status', task.status_id); 
-    select.addEventListener('change', (e) => {
-        handleStatusChange(task.id, parseInt(e.target.value));
-    });
+    select.addEventListener('change', (e) => handleStatusChange(task.id, parseInt(e.target.value)));
 
-    // Horizontal Layout matching image 7.png
     const content = card.querySelector('.task-card__content');
     content.innerHTML = `
         <div class="task-card__info">
@@ -283,7 +302,6 @@ function createTaskCard(task) {
         </div>
         <span class="task-card__date">${formatDate(task.deadline)}</span>
     `;
-
     return card;
 }
 
@@ -299,4 +317,70 @@ function handleStatusChange(taskId, newStatusId) {
 function formatDate(dateString) {
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('th-TH', options);
+}
+
+function renderDropdown() {
+    const menu = document.getElementById('userDropdownMenu');
+    if (!menu) return;
+
+    if (!appState.token) {
+        menu.innerHTML = `
+            <div class="user-dropdown-header">
+                <div class="avatar">G</div>
+                <div class="user-dropdown-header-info">
+                    <div class="user-dropdown-name">Guest User</div>
+                    <div class="user-dropdown-email">Not logged in</div>
+                </div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <button class="user-dropdown-item login-btn" onclick="window.location.href='login.html'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                Log in / Sign up
+            </button>
+        `;
+    } else {
+        const { user } = appState;
+        const displayName = user.name || user.username || 'User';
+        menu.innerHTML = `
+            <div class="user-dropdown-header">
+                <div class="avatar">${displayName.substring(0, 2).toUpperCase()}</div>
+                <div class="user-dropdown-header-info">
+                    <div class="user-dropdown-name">
+                        ${displayName} <span class="user-dropdown-badge">PRO</span>
+                    </div>
+                    <div class="user-dropdown-email">${user.email || 'user@example.com'}</div>
+                </div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <button class="user-dropdown-item" onclick="window.location.href='setting.html'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Settings
+            </button>
+            <button class="user-dropdown-item" id="btnToggleTheme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                Toggle Theme
+            </button>
+            <div class="user-dropdown-divider"></div>
+            <button class="user-dropdown-item" id="btnSignOut">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Sign Out
+            </button>
+        `;
+
+        document.getElementById('btnToggleTheme')?.addEventListener('click', () => {
+            const current = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
+            applyTheme(current);
+        });
+
+        document.getElementById('btnSignOut')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        });
+    }
+}
+
+function applyTheme(theme) {
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(`${theme}-theme`);
+    localStorage.setItem('theme', theme);
 }

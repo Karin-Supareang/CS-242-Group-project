@@ -1,6 +1,6 @@
 /* Notification Page Styles */
 .notification-container {
-    background: white;
+    background: var(--bg-card);
     border-radius: 16px;
     padding: 30px;
     border: 1px solid var(--border);
@@ -79,7 +79,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-left-width: 4px;
     border-radius: 10px;
@@ -93,7 +93,7 @@
 
 .noti-card--urgent { border-left-color: var(--danger); }
 .noti-card--soon   { border-left-color: var(--warning); }
-.noti-card--later  { border-left-color: #e0e0e0; }
+.noti-card--later  { border-left-color: var(--border); }
 
 .noti-card__title {
     font-size: 0.9375rem;
