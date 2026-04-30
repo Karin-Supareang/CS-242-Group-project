@@ -501,17 +501,73 @@ function createTaskCard(task) {
                 ${tagsHtml}
             </div>
         </div>
-        <span class="task-card__date" style="display: block; margin-top: 8px;">${formatDate(task.deadline)} ${task.deadline ? new Date(task.deadline).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) + ' น.' : ''}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <span class="task-card__date">${formatDate(task.deadline)} ${task.deadline ? new Date(task.deadline).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) + ' น.' : ''}</span>
+            <div class="task-card__percentage" style="display: flex; align-items: center; gap: 4px;" title="แก้ไขความคืบหน้า (%)">
+                <input type="number" class="pct-input" value="${task.percentage || 0}" min="0" max="100" style="width: 50px; padding: 2px 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.75rem; text-align: center; font-family: inherit; outline: none; transition: border-color 0.2s;">
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">%</span>
+            </div>
+        </div>
     `;
 
     // ทำให้เนื้อหาของการ์ดกดคลิกได้เพื่อเปิดดูรายละเอียด
     content.style.cursor = 'pointer';
-    content.addEventListener('click', () => showTaskDetails(task));
+    content.addEventListener('click', (e) => {
+        // ป้องกันไม่ให้เด้ง Modal ตอนที่ผู้ใช้แค่จะกดพิมพ์เปอร์เซ็นต์
+        if (e.target.classList.contains('pct-input')) return;
+        showTaskDetails(task);
+    });
     
     // ป้องกันการคลิก dropdown แล้วดันไปเปิด modal ให้หยุดแค่ตรง dropdown
     select.addEventListener('click', (e) => e.stopPropagation());
 
+    const pctInput = card.querySelector('.pct-input');
+    if (pctInput) {
+        pctInput.addEventListener('change', async (e) => {
+            let val = parseInt(e.target.value);
+            if (isNaN(val)) val = 0;
+            if (val > 100) val = 100;
+            if (val < 0) val = 0;
+            e.target.value = val;
+            await handlePercentageChange(taskId, val);
+        });
+        pctInput.addEventListener('focus', () => pctInput.style.borderColor = '#3b82f6');
+        pctInput.addEventListener('blur', () => pctInput.style.borderColor = '#cbd5e1');
+    }
+
     return card;
+}
+
+async function handlePercentageChange(taskId, newPercentage) {
+    const token = localStorage.getItem('token');
+    const taskIndex = appState.tasks.findIndex(t => (t.task_id || t.id) === taskId);
+    if (taskIndex !== -1) {
+        try {
+            let payload = { percentage: newPercentage };
+            // ทำให้ฉลาดขึ้น: ถ้าปรับเป็น 100% ให้ปรับ status เป็นเสร็จสิ้นด้วย
+            if (newPercentage >= 100) {
+                payload.status = 'completed';
+            } else if (appState.tasks[taskIndex].status === 'completed' && newPercentage < 100) {
+                payload.status = 'doing'; // ถ้าดึงกลับลงมาจาก 100 ให้เด้งกลับมากำลังทำ
+            }
+
+            const response = await fetch(`${API_BASE_URL}/assignment/update/${taskId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error('Failed to update percentage');
+            
+            const updatedTask = await response.json();
+            appState.tasks[taskIndex] = updatedTask;
+            renderTasks();
+            updateStats();
+        } catch (error) {
+            console.error("Error updating percentage:", error);
+            alert("Failed to update percentage.");
+            renderTasks(); // Re-render to revert the change in UI if failed
+        }
+    }
 }
 
 async function handleStatusChange(taskId, newStatusString) {
@@ -519,18 +575,25 @@ async function handleStatusChange(taskId, newStatusString) {
     const taskIndex = appState.tasks.findIndex(t => t.task_id === taskId);
     if (taskIndex !== -1) {
         try {
+            let payload = { status: newStatusString };
+            // ถ้าเปลี่ยนจาก Dropdown เป็น Completed ก็ดันให้ Percent เต็ม 100 เลย
+            if (newStatusString === 'completed') {
+                payload.percentage = 100;
+            }
+
             const response = await fetch(`${API_BASE_URL}/assignment/update/${taskId}`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ status: newStatusString })
+                body: JSON.stringify(payload)
             });
             if (!response.ok) throw new Error('Failed to update status');
             
             // อัปเดต state และ re-render
-            appState.tasks[taskIndex].status = newStatusString;
+            const updatedTask = await response.json();
+            appState.tasks[taskIndex] = updatedTask;
             renderTasks();
             updateStats();
         } catch (error) {
