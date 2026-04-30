@@ -7,7 +7,7 @@ from models.assignment import Assignment
 from schemas.assignment import AssignmentCreate, AssignmentUpdate, AssignmentBase, Assignment as AssignmentSchema # Assuming you'll create these schemas
 from models.category import Category # เพื่อตรวจสอบว่า category_id มีอยู่จริง
 from models.user import User
-from services.GoogleCalendarService import GoogleCalendarManager
+#from services.GoogleCalendarService import GoogleCalendarManager
 
 class AssignmentManager:
     """
