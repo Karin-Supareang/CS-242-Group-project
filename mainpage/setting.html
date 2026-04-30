@@ -9,12 +9,14 @@
 </head>
 
 <body class="light-theme">
+    <div id="successBubble" class="success-bubble">บันทึกแล้ว</div>
+
     <div class="settings-container">
         <aside class="sidebar">
             <div class="logo">vFAST</div>
             <nav>
-                <button class="nav-item active" onclick="showTab('profile')">👤 Profile</button>
-                <button class="nav-item" onclick="showTab('theme')">🎨 Theme</button>
+                <button class="nav-item active" onclick="checkNavigation('profile')">👤 Profile</button>
+                <button class="nav-item" onclick="checkNavigation('theme')">🎨 Theme</button>
             </nav>
             <div class="bottom-nav">
                 <button class="logout-btn" onclick="location.href='login.html'">↪ Log out</button>
@@ -37,7 +39,11 @@
                     <div class="form-grid">
                         <div class="input-group">
                             <label>ชื่อ</label>
-                            <input type="text" value="Jane">
+                            <div class="input-with-btn">
+                                <input type="text" id="nameInput" value="Jane" readonly>
+                                <button class="inner-btn" onclick="enableEdit('nameInput')">เปลี่ยน</button>
+                            </div>
+                            <span id="warn-nameInput" class="unsaved-warn">*มีการเปลี่ยนแปลงที่ยังไม่บันทึก</span>
                         </div>
                         <div class="input-group">
                             <label>Username</label>
@@ -46,20 +52,24 @@
                         <div class="input-group">
                             <label>Email</label>
                             <div class="input-with-btn">
-                                <input type="email" value="example@gmail.com">
-                                <button class="inner-btn">เปลี่ยน</button>
+                                <input type="email" id="emailInput" value="example@gmail.com" readonly>
+                                <button class="inner-btn" onclick="enableEdit('emailInput')">เปลี่ยน</button>
                             </div>
+                            <span id="warn-emailInput" class="unsaved-warn">*มีการเปลี่ยนแปลงที่ยังไม่บันทึก</span>
                         </div>
+
                         <div class="input-group">
                             <label>Password</label>
                             <div class="input-with-btn">
-                                <input type="password" value="******">
-                                <button class="inner-btn">เปลี่ยน</button>
+                                <input type="password" id="passInput" value="******" readonly>
+                                <button class="inner-btn" onclick="enableEdit('passInput')">เปลี่ยน</button>
                             </div>
+                            <span id="warn-passInput" class="unsaved-warn">*มีการเปลี่ยนแปลงที่ยังไม่บันทึก</span>
                         </div>
                     </div>
+
                     <div class="actions">
-                        <button class="save-btn">บันทึก</button>
+                        <button class="save-btn" id="saveAllBtn" onclick="saveData()">บันทึก</button>
                         <button class="delete-btn" onclick="openDeleteModal()">Delete profile and log out</button>
                     </div>
                 </div>
@@ -82,6 +92,7 @@
             </section>
         </main>
     </div>
+
     <div id="deleteModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-icon">⚠️</div>
@@ -93,6 +104,18 @@
             </div>
         </div>
     </div>
+
+    <div id="unsavedOverlay" class="modal-overlay">
+        <div class="modal-card">
+            <h3>มีการเปลี่ยนแปลงที่ยังไม่ได้รับการบันทึก</h3>
+            <p>คุณต้องการบันทึกการเปลี่ยนแปลงก่อนออกจากหน้านี้หรือไม่?</p>
+            <div class="modal-actions">
+                <button class="btn-outline-purple" onclick="closeUnsavedModal()">Cancel</button>
+                <button class="btn-purple" onclick="saveAndLeave()">Save change and leave</button>
+            </div>
+        </div>
+    </div>
+
     <script src="setting.js"></script>
 </body>
 

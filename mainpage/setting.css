@@ -211,3 +211,76 @@ input {
     border-radius: 8px;
     cursor: pointer;
 }
+
+/*Light theme*/
+input.editing {
+    border: 1px solid #ff4d4d !important;
+    background-color: #fffafa !important;
+    color: #333;
+}
+
+/* warning when leave without save change */
+.unsaved-warn {
+    color: #ff4d4d;
+    font-size: 0.75rem;
+    display: none; /*hide*/
+    margin-top: 5px;
+}
+
+/*save change overlay*/
+.btn-purple {
+    flex: 1; padding: 12px; border: none; border-radius: 10px;
+    background: #4e54a4; color: white; cursor: pointer; font-weight: bold;
+}
+
+.btn-outline-purple {
+    flex: 1; padding: 12px; border: 2px solid #4e54a4; border-radius: 10px;
+    background: transparent; color: #4e54a4; cursor: pointer; font-weight: bold;
+}
+
+/*จัดวางปุ่ม บันทึกและ delete*/
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee; /*เส้นคั่น เพื่อตกแต่ง */
+}
+
+.inner-btn {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 5px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.inner-btn:hover { background: #e0e0e0; }
+
+/* Success Bubble */
+.success-bubble {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2ecc71;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    display: none;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    font-weight: bold;
+}
+
+/*Dark mode*/
+.dark-theme input.editing {
+    background-color: #2c2c44 !important;
+    color: #ffffff !important;           
+    border: 1.5px solid #4e54a4 !important;
+}
+
+.dark-theme input.editing::placeholder {
+    color: #888;
+}

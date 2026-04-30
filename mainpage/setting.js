@@ -55,3 +55,56 @@ window.onclick = function(event) {
         closeDeleteModal();
     }
 }
+
+let isChanged = false; //is there any changes that you didn't save?
+let pendingTab = '';
+
+// 1. Click on  "เปลี่ยน"  to edit text
+function enableEdit(inputId) {
+    const input = document.getElementById(inputId);
+    const warn = document.getElementById('warn-' + inputId);
+    
+    input.removeAttribute('readonly'); //you can edit the text now
+    input.focus();
+    input.classList.add('editing'); //red border
+    warn.style.display = 'block'; //warning text
+    isChanged = true; //change status
+}
+
+// 2.ปุ่ม บันทึก
+function saveData() {
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.setAttribute('readonly', true);
+        input.classList.remove('editing');
+    });
+    
+    document.querySelectorAll('.unsaved-warn').forEach(w => w.style.display = 'none');
+
+    //show Success Bubble
+    const bubble = document.getElementById('successBubble');
+    bubble.style.display = 'block';
+    setTimeout(() => { bubble.style.display = 'none'; }, 2000);
+
+    isChanged = false; //reset status
+}
+
+// 3.check that we save before proceed to other tab/page
+function checkNavigation(tabName) {
+    if (isChanged) {
+        pendingTab = tabName;
+        document.getElementById('unsavedOverlay').style.display = 'flex';
+    } else {
+        showTab(tabName);
+    }
+}
+
+function saveAndLeave() {
+    saveData();
+    document.getElementById('unsavedOverlay').style.display = 'none';
+    if (pendingTab) showTab(pendingTab);
+}
+
+function closeUnsavedModal() {
+    document.getElementById('unsavedOverlay').style.display = 'none';
+}
