@@ -1,4 +1,15 @@
+/**
+ * Smart Academic Planner - Notification Page
+ */
+
 import { loadSidebar } from './sidebar.js';
+
+// Apply saved theme immediately on load
+(function () {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(saved + '-theme');
+})();
 
 const API_CONFIG = {
     DASHBOARD: './test/data.json',
@@ -92,9 +103,12 @@ function getStatusBadge(statusId) {
 }
 
 function initFilter() {
-    document.getElementById('filterSelect').addEventListener('change', e => {
-        renderNotifications(e.target.value);
-    });
+    const filterSelect = document.getElementById('filterSelect');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', e => {
+            renderNotifications(e.target.value);
+        });
+    }
 }
 
 function formatDate(dateString) {

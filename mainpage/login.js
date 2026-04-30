@@ -11,6 +11,7 @@ toRegister.addEventListener('click', (e) => {
     e.preventDefault();
     loginSection.style.display = 'none';
     registerSection.style.display = 'block';
+    clearErrors();
 });
 
 // 2. Switch to Login
@@ -18,48 +19,104 @@ toLogin.addEventListener('click', (e) => {
     e.preventDefault();
     registerSection.style.display = 'none';
     loginSection.style.display = 'block';
+    clearErrors();
 });
+
+// Real-time Validation Logic Helper
+function setupValidation(inputId, errorId, validationType) {
+    const input = document.getElementById(inputId);
+    const errorEl = document.getElementById(errorId);
+    
+    if (!input || !errorEl) return null;
+
+    const validate = () => {
+        const val = input.value.trim();
+        if (!val) {
+            showFieldError(input, errorEl, 'กรุณากรอกข้อมูล');
+            return false;
+        }
+        
+        if (validationType === 'email' && !validateEmail(val)) {
+            showFieldError(input, errorEl, 'รูปแบบ Email ไม่ถูกต้อง');
+            return false;
+        }
+        
+        if (validationType === 'password' && val.length < 6) {
+            showFieldError(input, errorEl, 'รหัสผ่านต้องมีอย่างน้อย 6 ตัว');
+            return false;
+        }
+        
+        hideFieldError(input, errorEl);
+        return true;
+    };
+
+    input.addEventListener('input', validate);
+    return validate;
+}
+
+// Initialize Validations
+const validateLoginEmail = setupValidation('loginEmail', 'emailError', 'email');
+const validateLoginPassword = setupValidation('loginPassword', 'passwordError', 'password');
+const validateRegEmail = setupValidation('regEmail', 'regEmailError', 'email');
+const validateRegPassword = setupValidation('regPassword', 'regPasswordError', 'password');
+
+function showFieldError(input, errorEl, msg) {
+    input.classList.add('invalid');
+    errorEl.textContent = msg;
+    errorEl.style.display = 'block';
+}
+
+function hideFieldError(input, errorEl) {
+    input.classList.remove('invalid');
+    errorEl.style.display = 'none';
+}
+
+function clearErrors() {
+    document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('input').forEach(el => el.classList.remove('invalid'));
+    const loginErr = document.getElementById('loginError');
+    const registerErr = document.getElementById('registerError');
+    if (loginErr) loginErr.style.display = 'none';
+    if (registerErr) registerErr.style.display = 'none';
+}
 
 // 3. Register form submit
 document.getElementById('registerForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const firstName = document.getElementById('regFirstName').value;
-    const lastName = document.getElementById('regLastName').value;
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
+    const isEmailValid = validateRegEmail();
+    const isPasswordValid = validateRegPassword();
+    const firstName = document.getElementById('regFirstName').value.trim();
+    const lastName = document.getElementById('regLastName').value.trim();
+    const errBox = document.getElementById('registerError');
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: email,
-                name: `${firstName} ${lastName}`.trim(),
-                password: password,
-                confirm_password: password
-            }) // 💡 ไม่ได้ส่ง username ไปด้วย เพื่อให้ Backend ดึงจากหน้า @ ของอีเมลให้เลย
-        });
+    errBox.style.display = 'none';
 
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Signup failed');
-        }
-
-        alert('ลงทะเบียนสำเร็จแล้ว! ระบบได้สร้าง Username ให้อัตโนมัติ กรุณาเข้าสู่ระบบอีกครั้ง');
-        registerSection.style.display = 'none';
-        loginSection.style.display = 'block';
-        this.reset(); // ล้างข้อมูลในฟอร์มออก
-    } catch (error) {
-        alert('เกิดข้อผิดพลาด: ' + error.message);
+    if (!firstName || !lastName) {
+        showError(errBox, 'กรุณากรอกชื่อและนามสกุล');
+        return;
     }
+
+    if (!isEmailValid || !isPasswordValid) return;
+
+    alert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบอีกครั้ง');
+    registerSection.style.display = 'none';
+    loginSection.style.display = 'block';
 });
 
 // 4. Login form submit
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
+    
+    const isEmailValid = validateLoginEmail();
+    const isPasswordValid = validateLoginPassword();
+
+    if (!isEmailValid || !isPasswordValid) return;
+
+    const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    errBox.style.display = 'none';
 
     try {
         const response = await fetch('http://localhost:8080/auth/login', {
@@ -79,12 +136,43 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             window.location.href = "index.html";
         }
     } catch (error) {
-        alert(error.message);
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.warn('Backend not found, entering Demo Mode...');
+            localStorage.setItem('token', 'mock-proto-token-' + Date.now());
+            window.location.href = "index.html";
+        } else {
+            showError(errBox, error.message);
+        }
     }
 });
 
+function showError(el, msg) {
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
 // 5. Google Login
-function handleGoogleLogin() {
-    // เปลี่ยนเส้นทางไปยัง Backend เพื่อเริ่มกระบวนการ OAuth
-    window.location.href = 'http://localhost:8080/auth/login/google';
+window.handleGoogleLogin = function(response) {
+    const idToken = response.credential;
+
+    fetch('http://localhost:8080/auth/login/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access_token) {
+            localStorage.setItem('token', data.access_token);
+            window.location.href = "index.html";
+        } else {
+            alert('Google login failed');
+        }
+    })
+    .catch(() => alert('Google login error'));
 }

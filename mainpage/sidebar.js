@@ -23,4 +23,12 @@ export async function loadSidebar(activePage) {
         sidebar.classList.remove('sidebar--active');
         overlay.classList.remove('overlay--active');
     });
+
+    // Add Logout Listener
+    const logoutLink = document.querySelector('.sidebar__link[data-page="logout"]');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', () => {
+            localStorage.removeItem('token');
+        });
+    }
 }
