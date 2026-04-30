@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vFAST - Settings</title>
+    <link rel="stylesheet" href="setting.css">
+</head>
+<body class="light-theme"> <div class="settings-container">
+        <aside class="sidebar">
+            <div class="logo">vFAST</div>
+            <nav>
+                <button class="nav-item active" onclick="showTab('profile')">👤 Profile</button>
+                <button class="nav-item" onclick="showTab('theme')">🎨 Theme</button>
+            </nav>
+            <div class="bottom-nav">
+                <button class="logout-btn" onclick="location.href='login.html'">↪ Log out</button>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header>
+                <h2>Settings</h2>
+                <a href="index.html" class="home-link">Home</a>
+            </header>
+
+            <section id="profile-tab" class="tab-content active">
+                <div class="card">
+                    <div class="profile-header">
+                        <div class="avatar">JD</div>
+                        <button class="edit-pic-btn">Edit picture</button>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>ชื่อ</label>
+                            <input type="text" value="Jane">
+                        </div>
+                        <div class="input-group">
+                            <label>Username</label>
+                            <input type="text" value="JaneDoe">
+                        </div>
+                        <div class="input-group">
+                            <label>Email</label>
+                            <div class="input-with-btn">
+                                <input type="email" value="example@gmail.com">
+                                <button class="inner-btn">เปลี่ยน</button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <div class="input-with-btn">
+                                <input type="password" value="******">
+                                <button class="inner-btn">เปลี่ยน</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="save-btn">บันทึก</button>
+                        <button class="delete-btn">Delete profile and log out</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="theme-tab" class="tab-content">
+                <div class="card">
+                    <h3>Change Theme</h3>
+                    <div class="theme-options">
+                        <div class="theme-box light active" onclick="setTheme('light')">
+                            <div class="preview"></div>
+                            <span>Light</span>
+                        </div>
+                        <div class="theme-box dark" onclick="setTheme('dark')">
+                            <div class="preview"></div>
+                            <span>Dark</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="setting.js"></script>
+</body>
+</html>
