@@ -14,7 +14,8 @@ import { loadSidebar } from './sidebar.js';
 const API_CONFIG = {
     DASHBOARD: './test/data.json',
     USER: './test/user.json',
-    AUTH_ME: 'http://localhost:8080/auth/me'
+    AUTH_ME: 'http://localhost:8080/auth/me',
+    ASSIGNMENTS: 'http://localhost:8080/assignment/get/all'
 };
 
 let allTasks = [];
@@ -45,13 +46,25 @@ async function loadData() {
     const token = localStorage.getItem('token');
     try {
         const [dataRes, userRes] = await Promise.all([
-            fetch(API_CONFIG.DASHBOARD),
+            fetch(API_CONFIG.ASSIGNMENTS, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
             fetch(API_CONFIG.AUTH_ME, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
         ]);
-        const data = await dataRes.json();
         
+        if (dataRes.ok) {
+            const tasks = await dataRes.json();
+            allTasks = tasks.map(t => ({
+                ...t,
+                status_id: t.status === 'completed' ? 2 : (t.status === 'doing' ? 1 : 0)
+            }));
+        } else {
+            const data = await (await fetch(API_CONFIG.DASHBOARD)).json();
+            allTasks = data.tasks;
+        }
+
         // ถ้าดึงข้อมูลจาก API จริงสำเร็จ ให้ใช้ข้อมูลจริง ถ้าไม่สำเร็จ (เช่น Token หมดอายุ) ให้ใช้ค่าจำลองไปก่อน
         let user;
         if (userRes.ok) {
@@ -60,7 +73,6 @@ async function loadData() {
             user = await (await fetch(API_CONFIG.USER)).json();
         }
         
-        allTasks = data.tasks;
         renderUser(user);
         renderNotifications('all');
     } catch (err) {
@@ -115,10 +127,15 @@ function renderList(listId, tasks, type) {
         const badge = getStatusBadge(task.status_id);
         const card = document.createElement('div');
         card.className = `noti-card noti-card--${type}`;
+        card.style.cursor = 'pointer';
+        card.style.backgroundColor = '#ffffff';
+        
+        card.addEventListener('click', () => showTaskDetails(task));
+
         card.innerHTML = `
             <div class="noti-card__info">
-                <div class="noti-card__title">${task.title}</div>
-                <div class="noti-card__date">Due: ${formatDate(task.deadline)}</div>
+                <div class="noti-card__title" style="color: #333333;">${task.title}</div>
+                <div class="noti-card__date" style="color: #666666;">Due: ${formatDate(task.deadline)}</div>
             </div>
             <span class="noti-badge ${badge.cls}">${badge.label}</span>
         `;
@@ -145,4 +162,81 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('en-GB', {
         day: 'numeric', month: 'short', year: 'numeric'
     });
+}
+
+function showTaskDetails(task) {
+    const existing = document.getElementById('taskDetailModal');
+    if (existing) existing.remove();
+
+    const badge = getStatusBadge(task.status_id);
+    let tagsHtml = '-';
+    if (task.categories && task.categories.length > 0) {
+        tagsHtml = task.categories.map(cat => `<span style="background-color: ${cat.color_code}20; color: ${cat.color_code}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; margin-right: 5px; font-weight: 600;">${cat.category_name}</span>`).join('');
+    }
+
+    const modalHtml = `
+        <div id="taskDetailModal" class="overlay overlay--active" style="display: flex; justify-content: center; align-items: center; z-index: 3000; background-color: rgba(0,0,0,0.5);">
+            <div style="background: #ffffff; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; color: #333333; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;">
+                <button id="btnCloseModal" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888;">&times;</button>
+                
+                <h2 style="margin: 0 0 20px 0; color: #585191; font-size: 1.5rem; padding-right: 30px;">${task.title}</h2>
+                
+                <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px; margin-bottom: 20px; font-size: 0.95rem;">
+                    <div style="color: #666; font-weight: 600;">กำหนดส่ง:</div>
+                    <div>${formatDate(task.deadline)} ${new Date(task.deadline).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})} น.</div>
+                    
+                    <div style="color: #666; font-weight: 600;">สถานะ:</div>
+                    <div><span class="noti-badge ${badge.cls}" style="display: inline-block;">${badge.label}</span></div>
+                    
+                    <div style="color: #666; font-weight: 600;">หมวดหมู่:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">${tagsHtml}</div>
+                    
+                    <div style="color: #666; font-weight: 600;">เวลาประเมิน:</div>
+                    <div>${task.estimated_time ? task.estimated_time + ' ชั่วโมง' : 'ไม่ได้ระบุ'}</div>
+                </div>
+                
+                <div style="background: #f4f5f9; padding: 15px; border-radius: 8px;">
+                    <div style="color: #666; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">รายละเอียดงาน:</div>
+                    <div style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; max-height: 200px; overflow-y: auto;">${task.description || 'ไม่มีรายละเอียดเพิ่มเติม'}</div>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: right;">
+                    <button id="btnDeleteTaskModal" style="background: #ff5c5c; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: background 0.2s;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-top: -2px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        ลบงานนี้
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    const closeModal = () => document.getElementById('taskDetailModal')?.remove();
+    document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+    document.getElementById('taskDetailModal').addEventListener('click', (e) => {
+        if (e.target.id === 'taskDetailModal') closeModal();
+    });
+    
+    const btnDelete = document.getElementById('btnDeleteTaskModal');
+    if (btnDelete) {
+        btnDelete.addEventListener('click', async () => {
+            if (confirm(`คุณต้องการลบงาน "${task.title}" ใช่หรือไม่?`)) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const taskId = task.task_id || task.id;
+                    const res = await fetch(`http://localhost:8080/assignment/delete/${taskId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('ไม่สามารถลบงานได้');
+                    
+                    alert('ลบงานสำเร็จ');
+                    window.location.reload(); // โหลดหน้าใหม่เพื่ออัปเดตรายการ
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+        });
+    }
 }

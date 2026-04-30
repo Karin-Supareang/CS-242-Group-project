@@ -26,6 +26,27 @@
     color: var(--text-muted);
 }
 
+/* Filter Dropdown Styles */
+#filterSelect {
+    padding: 10px 36px 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#filterSelect:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
 /* Sections */
 .noti-section {
     margin-bottom: 28px;
@@ -131,4 +152,3 @@
     color: var(--success);
     background-color: rgba(39, 174, 96, 0.12);
 }
-

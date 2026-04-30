@@ -22,6 +22,7 @@ const API_CONFIG = {
 let appState = {
     tasks: [],
     settings: {},
+    categories: [], // State for all available categories
     user: {},
     token: localStorage.getItem('token')
 };
@@ -76,6 +77,38 @@ function initUI() {
                 const options = { day: 'numeric', month: 'short', year: 'numeric' };
                 dateText.textContent = `สร้างวันที่ ${now.toLocaleDateString('en-GB', options)}`;
             }
+            
+            // สร้างปุ่ม Tag ใหม่โดยดึงข้อมูลจาก Categories ที่มีอยู่จริง
+            const tagSelector = document.getElementById('tagSelector');
+            if (tagSelector) {
+                const cats = appState.categories || [];
+                const existingTags = Array.from(tagSelector.querySelectorAll('.tag--selectable'));
+                
+                // 1. ตรวจสอบ Tag เดิมใน HTML ว่ามีในฐานข้อมูลหรือยัง ถ้ามีให้ฝัง ID เอาไว้
+                existingTags.forEach(tagEl => {
+                    const tagName = tagEl.textContent.trim().toLowerCase();
+                    const matchedCat = cats.find(c => c.category_name.toLowerCase() === tagName);
+                    if (matchedCat) {
+                        tagEl.dataset.categoryId = matchedCat.category_id;
+                    }
+                });
+                
+                // 2. ดึง Category อื่นๆ จากฐานข้อมูลที่ยังไม่มีบนหน้าจอมาแสดงเพิ่ม
+                cats.forEach(cat => {
+                    const exists = existingTags.some(tagEl => tagEl.textContent.trim().toLowerCase() === cat.category_name.toLowerCase());
+                    if (!exists) {
+                        const span = document.createElement('span');
+                        span.className = 'tag tag--selectable';
+                        span.textContent = cat.category_name;
+                        span.dataset.categoryId = cat.category_id; // ฝัง ID ลงไปในปุ่ม
+                        span.style.backgroundColor = `${cat.color_code}20`;
+                        span.style.color = cat.color_code;
+                        span.addEventListener('click', () => span.classList.toggle('selected'));
+                        tagSelector.appendChild(span);
+                    }
+                });
+            }
+
             addTaskSidebar.classList.add('add-task-sidebar--open');
             overlay.classList.add('overlay--active');
         });
@@ -106,19 +139,46 @@ function initUI() {
     const btnNewTag = document.getElementById('btnNewTag');
     const tagSelector = document.getElementById('tagSelector');
     if (btnNewTag && tagSelector) {
-        btnNewTag.addEventListener('click', () => {
+        btnNewTag.addEventListener('click', async () => {
             const tagName = prompt("Enter new tag name:");
             if (tagName && tagName.trim() !== '') {
-                const newTag = document.createElement('span');
-                newTag.className = `tag tag--custom tag--selectable selected`;
-                newTag.textContent = tagName.trim();
+                // สุ่มสี Hex Code (เช่น #FF5733) ให้ตรงกับรูปแบบในฐานข้อมูล
+                const randomHexColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
                 
-                const hue = Math.floor(Math.random() * 360);
-                newTag.style.backgroundColor = `hsla(${hue}, 80%, 60%, 0.15)`;
-                newTag.style.color = `hsl(${hue}, 70%, 40%)`;
-                
-                tagSelector.appendChild(newTag);
-                bindTagClick(newTag);
+                try {
+                    // ยิง API ไปสร้าง Category ใหม่ (คุณอาจจะต้องเช็กว่า Endpoint เป็น /category/post หรือ /category)
+                    const response = await fetch(`${API_BASE_URL}/category/post`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${appState.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            category_name: tagName.trim(),
+                            color_code: randomHexColor
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('ไม่สามารถสร้างหมวดหมู่ใหม่ในระบบได้');
+                    const newCategory = await response.json();
+
+                    // สร้างปุ่ม Tag ใหม่และฝัง category_id ที่ได้จาก Backend
+                    const newTag = document.createElement('span');
+                    newTag.className = `tag tag--selectable selected`;
+                    newTag.textContent = newCategory.category_name;
+                    newTag.dataset.categoryId = newCategory.category_id || newCategory.id;
+                    newTag.style.backgroundColor = `${newCategory.color_code || randomHexColor}20`;
+                    newTag.style.color = newCategory.color_code || randomHexColor;
+                    
+                    tagSelector.appendChild(newTag);
+                    bindTagClick(newTag);
+                    
+                    // เก็บลง State ป้องกันการสับสน
+                    if (!appState.categories) appState.categories = [];
+                    appState.categories.push(newCategory);
+                } catch (error) {
+                    alert("เกิดข้อผิดพลาด: " + error.message);
+                }
             }
         });
     }
@@ -137,9 +197,10 @@ function initUI() {
     // Submit New Task Logic
     const btnSubmitTask = document.getElementById('btnSubmitTask');
     if (btnSubmitTask) {
-        btnSubmitTask.addEventListener('click', () => {
+        btnSubmitTask.addEventListener('click', async () => {
             const name = document.getElementById('inputTaskName').value;
             const date = document.getElementById('inputTaskDate').value;
+            const estTime = document.getElementById('inputTaskEstTime')?.value;
             const note = document.getElementById('inputTaskNote').value;
             
             if (!name) {
@@ -147,25 +208,88 @@ function initUI() {
                 return;
             }
 
-            const selectedTags = Array.from(document.querySelectorAll('.tag-selector .tag--selectable.selected'))
-                .map(tag => tag.textContent.trim());
+            // ดึง ID ออกมาจากปุ่ม Tag ที่ผู้ใช้เลือกตรงๆ
+            const selectedTagElements = document.querySelectorAll('.tag-selector .tag--selectable.selected');
+            const categoryIds = [];
             
-            const newTask = {
-                id: Date.now(),
+            for (const tagEl of selectedTagElements) {
+                let catId = parseInt(tagEl.dataset.categoryId);
+                
+                // ถ้าเป็น Tag ปลอมใน HTML ที่ยังไม่มี ID ในฐานข้อมูล ให้สร้าง Category ใหม่ให้อัตโนมัติ
+                if (isNaN(catId)) {
+                    const tagName = tagEl.textContent.trim();
+                    const randomHexColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    try {
+                        const catRes = await fetch(`${API_BASE_URL}/category/post`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${appState.token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ category_name: tagName, color_code: randomHexColor })
+                        });
+                        if (catRes.ok) {
+                            const newCat = await catRes.json();
+                            catId = newCat.category_id || newCat.id;
+                            tagEl.dataset.categoryId = catId; // เซฟ ID เก็บไว้ใช้ครั้งต่อไป
+                            appState.categories.push(newCat);
+                        }
+                    } catch (e) {
+                        console.error("Failed to auto-create category for hardcoded tag:", e);
+                    }
+                }
+                if (!isNaN(catId)) {
+                    categoryIds.push(catId);
+                }
+            }
+
+            const newTaskData = {
                 title: name,
                 description: note,
-                deadline: date || new Date().toISOString().split('T')[0],
-                status_id: 0,
-                tags: selectedTags
+                deadline: date ? new Date(new Date(date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19) : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19),
+                status: "pending",
+                priority: 1,
+                estimated_time: estTime ? parseInt(estTime) : null,
+                percentage: 0,
+                category_ids: categoryIds
             };
 
-            appState.tasks.push(newTask);
-            renderTasks();
-            updateStats();
+            const submitBtn = document.getElementById('btnSubmitTask');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังบันทึก...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/assignment/post`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${appState.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newTaskData)
+                });
+
+                if (!response.ok) throw new Error('Failed to create task');
+                const createdTask = await response.json();
+                
+                // อัปโหลดไฟล์ (ถ้ามีการแนบไฟล์มาด้วย)
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput && fileInput.files.length > 0) {
+                    const formData = new FormData();
+                    formData.append('task_id', createdTask.task_id);
+                    formData.append('file', fileInput.files[0]);
+                    
+                    submitBtn.textContent = 'AI กำลังวิเคราะห์...';
+                    await fetch(`${API_BASE_URL}/assignment/upload`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${appState.token}` },
+                        body: formData
+                    });
+                }
+
+                alert("สร้างงานสำเร็จ!");
+                await loadApp(); // โหลดข้อมูลใหม่ทั้งหมดจาก Backend เพื่อรีเฟรชตาราง
 
             // Reset form
             document.getElementById('inputTaskName').value = '';
             document.getElementById('inputTaskDate').value = '';
+            if (document.getElementById('inputTaskEstTime')) document.getElementById('inputTaskEstTime').value = '';
             document.getElementById('inputTaskNote').value = '';
             if (fileInput) fileInput.value = '';
             if (uploadText) uploadText.textContent = 'อัปโหลดไฟล์';
@@ -173,6 +297,13 @@ function initUI() {
             
             if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
             overlay.classList.remove('overlay--active');
+            } catch (error) {
+                console.error("Error creating task:", error);
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'เพิ่มงาน';
+            }
         });
     }
 
@@ -205,17 +336,25 @@ async function loadApp() {
     appState.token = token;
 
     try {
-        const [settingsRes, dataRes] = await Promise.all([
-            fetch(API_CONFIG.SETTINGS),
-            fetch(API_CONFIG.DASHBOARD)
-        ]);
-
+        const settingsRes = await fetch(API_CONFIG.SETTINGS);
         appState.settings = await settingsRes.json();
-        const data = await dataRes.json();
-        appState.tasks = data.tasks;
 
         // User Loading
         if (appState.token) {
+            try {
+                // Fetch all user categories first to populate the tag selector
+                const catRes = await fetch(`${API_BASE_URL}/category/get/all`, {
+                    headers: { 'Authorization': `Bearer ${appState.token}` }
+                });
+                if (catRes.ok) {
+                    appState.categories = await catRes.json();
+                } else {
+                    appState.categories = [];
+                }
+            } catch (e) {
+                console.warn("Could not fetch categories, tag selection might be limited.");
+                appState.categories = [];
+            }
             try {
                 const res = await fetch(API_CONFIG.AUTH_ME, {
                     headers: { 'Authorization': `Bearer ${appState.token}` }
@@ -227,6 +366,27 @@ async function loadApp() {
             }
         } else {
             appState.user = { name: 'Guest', initials: 'G' };
+        }
+
+        // Tasks Loading จาก Backend จริงๆ
+        if (appState.token) {
+            try {
+                const tasksRes = await fetch(`${API_BASE_URL}/assignment/get/all`, {
+                    headers: { 'Authorization': `Bearer ${appState.token}` }
+                });
+                if (tasksRes.ok) {
+                    appState.tasks = await tasksRes.json();
+                } else {
+                    const data = await (await fetch(API_CONFIG.DASHBOARD)).json();
+                    appState.tasks = data.tasks;
+                }
+            } catch (e) {
+                const data = await (await fetch(API_CONFIG.DASHBOARD)).json();
+                appState.tasks = data.tasks;
+            }
+        } else {
+            const data = await (await fetch(API_CONFIG.DASHBOARD)).json();
+            appState.tasks = data.tasks;
         }
 
         renderUI();
@@ -295,13 +455,13 @@ function renderTasks() {
     let completedCount = 0;
     appState.tasks.forEach(task => {
         const card = createTaskCard(task);
-        // Backend มีแค่ 'pending' กับ 'completed'
-        // เราจะจัดให้ 'pending' อยู่ใน 'Doing' และ 'completed' อยู่ใน 'Completed'
         if (task.status === 'completed') {
             listCompleted.appendChild(card);
             completedCount++;
-        } else { // 'pending' or other statuses
+        } else if (task.status === 'doing') {
             listDoing.appendChild(card);
+        } else {
+            listBacklog.appendChild(card);
         }
     });
     countCompleted.textContent = completedCount;
@@ -312,23 +472,45 @@ function createTaskCard(task) {
     const clone = template.content.cloneNode(true);
     const card = clone.querySelector('.task-card');
     
+    const taskId = task.task_id || task.id;
+    const statusId = task.status === 'completed' ? 2 : (task.status === 'doing' ? 1 : 0);
+    
     const select = card.querySelector('.status-dropdown');
-    select.value = task.status_id;
-    select.setAttribute('data-status', task.status_id); 
-    select.addEventListener('change', (e) => handleStatusChange(task.id, parseInt(e.target.value)));
+    select.value = statusId;
+    select.setAttribute('data-status', statusId); 
+    select.addEventListener('change', (e) => {
+        const val = parseInt(e.target.value);
+        const statusStr = val === 2 ? 'completed' : (val === 1 ? 'doing' : 'pending');
+        handleStatusChange(taskId, statusStr);
+    });
+
+    let tagsHtml = '';
+    if (task.categories && task.categories.length > 0) {
+        tagsHtml = task.categories.map(cat => `<span class="tag" style="background-color: ${cat.color_code}20; color: ${cat.color_code};">${cat.category_name}</span>`).join('');
+    } else if (task.tags && task.tags.length > 0) {
+        tagsHtml = task.tags.map(t => `<span class="tag tag--${t.toLowerCase()}">${t}</span>`).join('');
+    }
 
     const content = card.querySelector('.task-card__content');
     content.innerHTML = `
-        <div class="task-card__info">
-            <div class="task-card__header">
-                <h4 class="task-card__title">${task.title}</h4>
+        <div class="task-card__info" style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+            <div class="task-card__header" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 12px;">
+                <h4 class="task-card__title" style="margin: 0; word-break: break-word; line-height: 1.4;">${task.title}</h4>
             </div>
             <div class="task-card__tags">
-                ${task.categories.map(cat => `<span class="tag" style="background-color: ${cat.color_code}20; color: ${cat.color_code};">${cat.category_name}</span>`).join('')}
+                ${tagsHtml}
             </div>
         </div>
-        <span class="task-card__date">${formatDate(task.deadline)}</span>
+        <span class="task-card__date" style="display: block; margin-top: 8px;">${formatDate(task.deadline)} ${task.deadline ? new Date(task.deadline).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) + ' น.' : ''}</span>
     `;
+
+    // ทำให้เนื้อหาของการ์ดกดคลิกได้เพื่อเปิดดูรายละเอียด
+    content.style.cursor = 'pointer';
+    content.addEventListener('click', () => showTaskDetails(task));
+    
+    // ป้องกันการคลิก dropdown แล้วดันไปเปิด modal ให้หยุดแค่ตรง dropdown
+    select.addEventListener('click', (e) => e.stopPropagation());
+
     return card;
 }
 
@@ -356,6 +538,96 @@ async function handleStatusChange(taskId, newStatusString) {
             alert("Failed to update task status.");
             renderTasks(); // Re-render to revert the change in UI
         }
+    }
+}
+
+function showTaskDetails(task) {
+    const existing = document.getElementById('taskDetailModal');
+    if (existing) existing.remove();
+
+    const statusId = task.status === 'completed' ? 2 : (task.status === 'doing' ? 1 : 0);
+    let badgeLabel = 'ยังไม่ส่ง';
+    let badgeBg = '#ffebeb';
+    let badgeColor = '#ff5c5c';
+    if (statusId === 2) { badgeLabel = 'ส่งแล้ว'; badgeBg = '#e8f8f0'; badgeColor = '#27ae60'; }
+    else if (statusId === 1) { badgeLabel = 'กำลังทำ'; badgeBg = '#eff6ff'; badgeColor = '#3b82f6'; }
+
+    let tagsHtml = '-';
+    if (task.categories && task.categories.length > 0) {
+        tagsHtml = task.categories.map(cat => `<span style="background-color: ${cat.color_code}20; color: ${cat.color_code}; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; margin-right: 5px; font-weight: 600;">${cat.category_name}</span>`).join('');
+    } else if (task.tags && task.tags.length > 0) {
+        tagsHtml = task.tags.map(t => `<span style="background-color: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; margin-right: 5px; font-weight: 600;">${t}</span>`).join('');
+    }
+
+    const modalHtml = `
+        <div id="taskDetailModal" class="overlay overlay--active" style="display: flex; justify-content: center; align-items: center; z-index: 3000; background-color: rgba(0,0,0,0.5);">
+            <div style="background: #ffffff; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; color: #333333; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;">
+                <button id="btnCloseModal" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888;">&times;</button>
+                
+                <h2 style="margin: 0 0 20px 0; color: #585191; font-size: 1.5rem; padding-right: 30px;">${task.title}</h2>
+                
+                <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px; margin-bottom: 20px; font-size: 0.95rem;">
+                    <div style="color: #666; font-weight: 600;">กำหนดส่ง:</div>
+                    <div>${formatDate(task.deadline)} ${task.deadline ? new Date(task.deadline).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) + ' น.' : ''}</div>
+                    
+                    <div style="color: #666; font-weight: 600;">สถานะ:</div>
+                    <div><span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; color: ${badgeColor}; background: ${badgeBg};">${badgeLabel}</span></div>
+                    
+                    <div style="color: #666; font-weight: 600;">หมวดหมู่:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">${tagsHtml}</div>
+                    
+                    <div style="color: #666; font-weight: 600;">เวลาประเมิน:</div>
+                    <div>${task.estimated_time ? task.estimated_time + ' ชั่วโมง' : 'ไม่ได้ระบุ'}</div>
+                </div>
+                
+                <div style="background: #f4f5f9; padding: 15px; border-radius: 8px;">
+                    <div style="color: #666; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">รายละเอียดงาน:</div>
+                    <div style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; max-height: 200px; overflow-y: auto;">${task.description || 'ไม่มีรายละเอียดเพิ่มเติม'}</div>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: right;">
+                    <button id="btnDeleteTaskModal" style="background: #ff5c5c; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: background 0.2s;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-top: -2px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        ลบงานนี้
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    const closeModal = () => document.getElementById('taskDetailModal')?.remove();
+    document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+    document.getElementById('taskDetailModal').addEventListener('click', (e) => {
+        if (e.target.id === 'taskDetailModal') closeModal();
+    });
+    
+    const btnDelete = document.getElementById('btnDeleteTaskModal');
+    if (btnDelete) {
+        btnDelete.addEventListener('click', async () => {
+            if (confirm(`คุณต้องการลบงาน "${task.title}" ใช่หรือไม่?`)) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const taskId = task.task_id || task.id;
+                    const res = await fetch(`${API_BASE_URL}/assignment/delete/${taskId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('ไม่สามารถลบงานได้');
+                    
+                    const taskIndex = appState.tasks.findIndex(t => (t.task_id || t.id) === taskId);
+                    if (taskIndex > -1) {
+                        appState.tasks.splice(taskIndex, 1);
+                    }
+                    renderTasks();
+                    updateStats();
+                    closeModal();
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
+        });
     }
 }
 
