@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading...</title>
-    <link rel="stylesheet" href="sidebar.css">
-    <link rel="stylesheet" href="index.css">
+    <title>vFAST - Dashboard</title>
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/index.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -18,11 +18,15 @@
         <main class="main-content" id="mainContent">
             <header class="top-bar">
                 <h1 class="page-title" id="pageTitle">...</h1>
-                <div class="user-info">
+                <div class="user-info user-dropdown-container" id="userDropdownBtn">
                     <span class="user-name" id="userName">...</span>
                     <div class="user-avatar" id="userAvatar">
                         <img src="" alt="Profile" id="imgAvatar" style="display: none;">
                         <span id="textAvatar">..</span>
+                    </div>
+                    <!-- Dropdown Menu -->
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <!-- Content injected via JS -->
                     </div>
                 </div>
             </header>
@@ -161,6 +165,6 @@
         </div>
     </aside>
 
-    <script src="index.js" type="module"></script>
+    <script src="js/index.js" type="module"></script>
 </body>
 </html>

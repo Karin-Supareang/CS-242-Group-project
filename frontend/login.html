@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vFAST - Login & Register</title>
+    <!-- Use global variables from index.css -->
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/login.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="light-theme">
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme') || 'light';
+            document.body.classList.remove('light-theme', 'dark-theme');
+            document.body.classList.add(saved + '-theme');
+        })();
+    </script>
+    <div class="login-container">
+        <div class="login-card">
+            <br>
+            <h1>Soft blooming</h1>
+            <br>
+            <br>
+            <!-- Login Section -->
+            <div id="loginSection">
+                <div id="loginError" class="error-msg" style="display: none;"></div>
+                <form id="loginForm" novalidate>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" placeholder="example@university.ac.th" required>
+                        <span class="field-error" id="emailError"></span>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="********" required>
+                        <span class="field-error" id="passwordError"></span>
+                    </div>
+                    <br>
+                    <button type="submit" class="submit-btn">เข้าสู่ระบบ</button>
+                </form>
+                <br>
+                <!-- Google Login Button -->
+                <div class="google-login-wrapper">
+                    <div id="g_id_onload"
+                         data-client_id="707023177998-hr7bgv7or3f7e06tqb2eq3hjkfcq90gt.apps.googleusercontent.com"
+                         data-callback="handleGoogleLogin">
+                    </div>
+                    <div class="g_id_signin" data-type="standard" data-width="100%"></div>
+                </div>
+
+                <p class="toggle-link">ยังไม่มีบัญชี? <a href="#" id="toRegister">สมัครสมาชิก</a></p>
+            </div>
+
+            <!-- Register Section -->
+            <div id="registerSection" style="display: none;">
+                <h3 style="margin-top:0; color:var(--accent);">สมัครสมาชิก</h3>
+                <div id="registerError" class="error-msg" style="display: none;"></div>
+                <form id="registerForm" novalidate>
+                    <div class="input-group">
+                        <label>ชื่อ-นามสกุล</label>
+                        <input type="text" id="regName" placeholder="ชื่อ นามสกุล" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Username</label>
+                        <input type="text" id="regUsername" placeholder="ห้ามมีเครื่องหมาย @" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="regEmail" placeholder="example@university.ac.th" required>
+                        <span class="field-error" id="regEmailError"></span>
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="regPassword" placeholder="********" required>
+                        <span class="field-error" id="regPasswordError"></span>
+                    </div>
+                    <div class="input-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="regConfirmPassword" placeholder="********" required>
+                        <span class="field-error" id="regConfirmPasswordError"></span>
+                    </div>
+                    <button type="submit" class="submit-btn">ลงทะเบียน</button>
+                </form>
+                <br>
+                <!-- Google Register Button (Same logic as Login) -->
+                <div class="google-login-wrapper">
+                    <div class="g_id_signin" data-type="standard" data-width="100%"></div>
+                </div>
+                <p class="toggle-link">มีบัญชีอยู่แล้ว? <a href="#" id="toLogin">เข้าสู่ระบบ</a></p>
+            </div>
+            <br>
+            <br>
+        </div>
+    </div>
+    <script src="js/login.js"></script>
+</body>
+</html>

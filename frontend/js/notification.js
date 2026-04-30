@@ -1,36 +1,84 @@
+/**
+ * Smart Academic Planner - Notification Page (Integrated)
+ */
+
 import { loadSidebar } from './sidebar.js';
 
+// Apply saved theme immediately on load
+(function () {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(saved + '-theme');
+})();
+
 const API_CONFIG = {
-    DASHBOARD: './test/data.json',
-    USER: './test/user.json'
+    DASHBOARD: 'http://localhost:8080/assignment/get/all',
+    USER: 'http://localhost:8080/auth/me'
 };
 
 let allTasks = [];
+const token = localStorage.getItem('token');
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Redirect if no token
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
     await loadSidebar('notification');
     await loadData();
     initFilter();
 });
 
+async function authFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            ...options.headers
+        }
+    });
+}
+
 async function loadData() {
     try {
         const [dataRes, userRes] = await Promise.all([
-            fetch(API_CONFIG.DASHBOARD),
-            fetch(API_CONFIG.USER)
+            authFetch(API_CONFIG.DASHBOARD),
+            authFetch(API_CONFIG.USER)
         ]);
-        const data = await dataRes.json();
-        const user = await userRes.json();
-        allTasks = data.tasks;
-        renderUser(user);
+
+        if (dataRes.ok) {
+            const rawTasks = await dataRes.json();
+            // Map backend tasks to frontend format
+            allTasks = rawTasks.map(t => ({
+                id: t.task_id,
+                title: t.title,
+                deadline: t.deadline,
+                status_id: mapStatusToId(t.status)
+            }));
+        }
+
+        if (userRes.ok) {
+            const user = await userRes.json();
+            renderUser(user);
+        }
+
         renderNotifications('all');
     } catch (err) {
         console.error('Load error:', err);
     }
 }
 
+function mapStatusToId(status) {
+    const s = status ? status.toLowerCase() : '';
+    if (s === 'doing') return 1;
+    if (s === 'done' || s === 'completed') return 2;
+    return 0; // backlog/pending
+}
+
 function renderUser(user) {
-    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
+    const displayName = user.name || user.username || 'User';
+    document.getElementById('userName').textContent = `Hello, ${displayName}!`;
 
     const imgAvatar = document.getElementById('imgAvatar');
     const textAvatar = document.getElementById('textAvatar');
@@ -39,7 +87,7 @@ function renderUser(user) {
         imgAvatar.style.display = 'block';
         if (textAvatar) textAvatar.style.display = 'none';
     } else if (textAvatar) {
-        textAvatar.textContent = user.initials || 'U';
+        textAvatar.textContent = (user.initials || displayName.substring(0, 2)).toUpperCase();
         textAvatar.style.display = 'block';
     }
 }
@@ -92,13 +140,16 @@ function getStatusBadge(statusId) {
 }
 
 function initFilter() {
-    document.getElementById('filterSelect').addEventListener('change', e => {
-        renderNotifications(e.target.value);
-    });
+    const filterSelect = document.getElementById('filterSelect');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', e => {
+            renderNotifications(e.target.value);
+        });
+    }
 }
 
 function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('en-GB', {
+    return new Date(dateString).toLocaleDateString('th-TH', {
         day: 'numeric', month: 'short', year: 'numeric'
     });
 }

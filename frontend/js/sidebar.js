@@ -1,5 +1,5 @@
 export async function loadSidebar(activePage) {
-    const res = await fetch('./sidebar.html');
+    const res = await fetch('./components/sidebar.html');
     const html = await res.text();
     document.getElementById('sidebar-placeholder').outerHTML = html;
 
@@ -23,4 +23,12 @@ export async function loadSidebar(activePage) {
         sidebar.classList.remove('sidebar--active');
         overlay.classList.remove('overlay--active');
     });
+
+    // Add Logout Listener
+    const logoutLink = document.querySelector('.sidebar__link[data-page="logout"]');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', () => {
+            localStorage.removeItem('token');
+        });
+    }
 }

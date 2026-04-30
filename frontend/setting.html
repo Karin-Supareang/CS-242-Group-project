@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vFAST - Settings</title>
+    <!-- Import Design System -->
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/index.css">
+    <!-- Import Specific Settings Overrides -->
+    <link rel="stylesheet" href="css/setting.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="light-theme">
+    <div class="layout">
+        <!-- Collapsible Sidebar (Dynamic) -->
+        <div id="sidebar-placeholder"></div>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <div class="settings-container">
+                <header class="top-bar">
+                    <h1 class="page-title" id="pageTitle">Settings</h1>
+                    <div class="user-info user-dropdown-container" id="userDropdownBtn">
+                        <span class="user-name" id="userName">...</span>
+                        <div class="user-avatar" id="userAvatar">
+                            <img src="" alt="Profile" id="imgAvatar" style="display: none;">
+                            <span id="textAvatar">..</span>
+                        </div>
+                        <!-- Dropdown Menu -->
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <!-- Content injected via JS -->
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Tabs Navigation -->
+                <div class="settings-tabs">
+                    <button class="nav-item active" id="tabBtnProfile">👤 Profile</button>
+                    <button class="nav-item" id="tabBtnTheme">🎨 Theme</button>
+                </div>
+
+                <!-- Profile Tab -->
+                <section id="profile-tab" class="tab-content active">
+                    <div class="board settings-board" id="profileBoard">
+                        <!-- Profile content will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Theme Tab -->
+                <section id="theme-tab" class="tab-content">
+                    <div class="board settings-board">
+                        <h3 class="section-title" style="margin-bottom: 24px;">Change Theme</h3>
+                        <div class="theme-options">
+                            <div class="theme-box light" id="themeBoxLight">
+                                <div class="preview"></div>
+                                <span>Light</span>
+                            </div>
+                            <div class="theme-box dark" id="themeBoxDark">
+                                <div class="preview"></div>
+                                <span>Dark</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="overlay delete-overlay">
+        <div class="modal-card">
+            <div class="modal-icon">⚠️</div>
+            <h3>คุณแน่ใจใช่ไหม?</h3>
+            <p>การลบโปรไฟล์จะทำให้ข้อมูลทั้งหมดหายไปและไม่สามารถกู้คืนได้</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelDelete">Cancel</button>
+                <button class="btn-danger" id="btnConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/setting.js" type="module"></script>
+</body>
+</html>
