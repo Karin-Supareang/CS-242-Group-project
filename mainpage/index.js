@@ -13,6 +13,15 @@ let appState = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. ดักจับ Token จาก URL (กรณี Redirect กลับมาจาก Google)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken) {
+        localStorage.setItem('token', urlToken);
+        // เคลียร์ Token ออกจาก URL เพื่อไม่ให้รกและป้องกันคนอื่นก๊อปปี้ไป
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     await loadSidebar('home');
     initUI();
     loadApp();

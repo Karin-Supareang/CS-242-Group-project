@@ -57,22 +57,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 });
 
 // 5. Google Login
-function handleGoogleLogin(response) {
-    const idToken = response.credential;
-
-    fetch('http://localhost:8080/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: idToken })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.access_token) {
-            localStorage.setItem('token', data.access_token);
-            window.location.href = "index.html";
-        } else {
-            alert('Google login failed');
-        }
-    })
-    .catch(() => alert('Google login error'));
+function handleGoogleLogin() {
+    // เปลี่ยนเส้นทางไปยัง Backend เพื่อเริ่มกระบวนการ OAuth
+    window.location.href = 'http://localhost:8080/auth/login/google';
 }
