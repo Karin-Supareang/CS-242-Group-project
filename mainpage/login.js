@@ -3,42 +3,73 @@ const registerSection = document.getElementById('registerSection');
 const toRegister = document.getElementById('toRegister');
 const toLogin = document.getElementById('toLogin');
 
-//1. Click on text สมัครสมาชิกในหน้า Login
+// 1. Switch to Register
 toRegister.addEventListener('click', (e) => {
     e.preventDefault();
     loginSection.style.display = 'none';
     registerSection.style.display = 'block';
 });
 
-// 2.Click text เข้าสู่ระบบ in Register page
+// 2. Switch to Login
 toLogin.addEventListener('click', (e) => {
     e.preventDefault();
     registerSection.style.display = 'none';
     loginSection.style.display = 'block';
 });
 
-// 3.Press "register" button
+// 3. Register form submit
 document.getElementById('registerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     alert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบอีกครั้ง');
-    
-    //Back to login
     registerSection.style.display = 'none';
     loginSection.style.display = 'block';
 });
 
-// 4.Click "Log in" button
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+// 4. Login form submit
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    //if valid infomation, go to index page
-    window.location.href = "index.html"; 
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        const response = await fetch('http://localhost:8080/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Login failed');
+        }
+
+        const data = await response.json();
+        if (data.access_token) {
+            localStorage.setItem('token', data.access_token);
+            window.location.href = "index.html";
+        }
+    } catch (error) {
+        alert(error.message);
+    }
 });
 
-//swapping teacher-student role
-const roleBtns = document.querySelectorAll('.role-btn');
-roleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        roleBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    });
-});
+// 5. Google Login
+function handleGoogleLogin(response) {
+    const idToken = response.credential;
+
+    fetch('http://localhost:8080/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access_token) {
+            localStorage.setItem('token', data.access_token);
+            window.location.href = "index.html";
+        } else {
+            alert('Google login failed');
+        }
+    })
+    .catch(() => alert('Google login error'));
+}
