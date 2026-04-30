@@ -29,3 +29,29 @@ function setTheme(theme) {
         document.querySelector('.theme-box.light').classList.add('active');
     }
 }
+
+//==== Modal appear ("delete the profile and log out" button)
+function openDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+//close modal when click "cancel" button
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+//confirm delete
+function confirmDelete() {
+    alert("ระบบกำลังลบข้อมูลและออกจากระบบ...");
+    
+    //back to Login
+    window.location.href = "login.html";
+}
+
+//close modal when click other space
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target == modal) {
+        closeDeleteModal();
+    }
+}

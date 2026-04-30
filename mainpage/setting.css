@@ -113,3 +113,101 @@ input {
 .theme-box.active { border-color: var(--primary-color); background: rgba(78, 84, 164, 0.1); }
 .theme-box.light .preview { background: white; width: 60px; height: 40px; border: 1px solid #ccc; margin-bottom: 5px; }
 .theme-box.dark .preview { background: #1a1a2e; width: 60px; height: 40px; margin-bottom: 5px; }
+
+/* Modal Overlay Background */
+.modal-overlay {
+    display: none; /* ปิดไว้ก่อน */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* พื้นหลังมืดโปร่งแสง */
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px); /* ทำพื้นหลังเบลอ */
+}
+
+/* Modal Card */
+.modal-card {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: modalIn 0.3s ease-out;
+}
+
+@keyframes modalIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-icon {
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+
+.modal-card h3 {
+    margin: 10px 0;
+    color: #333;
+}
+
+.modal-card p {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+}
+
+/* Modal Buttons */
+.modal-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #e0e0e0;
+    color: #333;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover { background: #d0d0d0; }
+
+.btn-confirm-delete {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #d9534f;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-confirm-delete:hover { background: #c9302c; }
+
+/*ปุ่มบันทึก และ delete profile and log out button*/
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.delete-btn {
+    background: #d9534f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}

@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vFAST - Settings</title>
     <link rel="stylesheet" href="setting.css">
 </head>
-<body class="light-theme"> <div class="settings-container">
+
+<body class="light-theme">
+    <div class="settings-container">
         <aside class="sidebar">
             <div class="logo">vFAST</div>
             <nav>
@@ -30,7 +33,7 @@
                         <div class="avatar">JD</div>
                         <button class="edit-pic-btn">Edit picture</button>
                     </div>
-                    
+
                     <div class="form-grid">
                         <div class="input-group">
                             <label>ชื่อ</label>
@@ -57,7 +60,7 @@
                     </div>
                     <div class="actions">
                         <button class="save-btn">บันทึก</button>
-                        <button class="delete-btn">Delete profile and log out</button>
+                        <button class="delete-btn" onclick="openDeleteModal()">Delete profile and log out</button>
                     </div>
                 </div>
             </section>
@@ -79,6 +82,18 @@
             </section>
         </main>
     </div>
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon">⚠️</div>
+            <h3>คุณแน่ใจใช่ไหม?</h3>
+            <p>การลบโปรไฟล์จะทำให้ข้อมูลทั้งหมดหายไปและไม่สามารถกู้คืนได้</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-confirm-delete" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
     <script src="setting.js"></script>
 </body>
+
 </html>
