@@ -19,7 +19,7 @@ class EmailManager:
         ฟังก์ชันสำหรับส่งอีเมล
         """
         if not self.sender_email or not self.sender_password:
-            print("⚠️ ไม่ได้ตั้งค่า SENDER_EMAIL และ SENDER_PASSWORD ในไฟล์ .env (ข้ามการส่งอีเมล)")
+            print("ไม่ได้ตั้งค่า SENDER_EMAIL และ SENDER_PASSWORD ในไฟล์ .env (ข้ามการส่งอีเมล)")
             return
 
         msg = MIMEMultipart()
