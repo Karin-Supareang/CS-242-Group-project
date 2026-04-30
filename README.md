@@ -5,26 +5,38 @@
 ## ขั้นตอนการ Setup (Backend)
 
 1. **เตรียม Environment:**
+   เข้าไปที่โฟลเดอร์ `backend`:
    ```bash
    cd backend
-   python -m venv .venv
    ```
 
-   Next, activate the virtual environment. The command depends on your operating system and terminal:
-   - **On macOS/Linux (bash/zsh):**
+   สร้าง Virtual Environment:
+   ```bash
+   python -m venv .venv
+   ```
+   > **⚠️ หากเจอข้อผิดพลาด `Permission denied` หรือคำสั่ง Activate ใช้ไม่ได้:**
+   > 1. **ลองปิด Terminal แล้วเปิดใหม่แบบ "Run as Administrator"** นี่เป็นวิธีแก้ที่ได้ผลบ่อยที่สุด
+   > 2. หากยังไม่ได้ผล อาจเป็นเพราะมี virtual environment เก่าที่ทำงานอยู่ ให้พิมพ์ `deactivate` แล้วลบโฟลเดอร์ `.venv` ทิ้ง (Mac/Linux ใช้ `rm -rf .venv`, PowerShell ใช้ `Remove-Item .venv -Recurse -Force`, CMD ใช้ `rmdir /s /q .venv`) แล้วลองสร้างใหม่อีกครั้ง
+
+   จากนั้น เปิดใช้งาน (Activate) Virtual Environment โดยคำสั่งจะขึ้นอยู่กับระบบปฏิบัติการและเทอร์มินัลที่คุณใช้:
+   - **สำหรับ macOS/Linux (bash/zsh):**
      ```bash
      source .venv/bin/activate
      ```
-   - **On Windows (Command Prompt):**
+   - **สำหรับ Windows (Command Prompt):**
      ```cmd
      .venv\Scripts\activate
      ```
-   - **On Windows (PowerShell):**
+   - **สำหรับ Windows (PowerShell):**
      ```powershell
      .venv\Scripts\Activate.ps1
      ```
+   - **สำหรับ Windows (Git Bash / MINGW64):**
+     ```bash
+     source .venv/Scripts/activate
+     ```
 
-   Finally, install the required packages:
+   สุดท้าย ติดตั้งแพ็กเกจที่จำเป็น:
    ```bash
    python -m pip install -r requirements.txt
    ```

@@ -1,81 +1,34 @@
 /**
- * Smart Academic Planner - Integrated Version
+ * Smart Academic Planner - Final Polish
  */
 
-const API_BASE_URL = 'http://localhost:8080';
+import { loadSidebar } from './sidebar.js';
+
 const API_CONFIG = {
-    DASHBOARD: `${API_BASE_URL}/assignment/get/all`,
+    DASHBOARD: './test/data.json',
     SETTINGS: './test/settings.json',
-    USER: `${API_BASE_URL}/auth/me`,
-    CATEGORIES: `${API_BASE_URL}/category/get`,
-    UPLOAD: `${API_BASE_URL}/assignment/upload`,
-    UPDATE_TASK: (id) => `${API_BASE_URL}/assignment/update/${id}`,
-    CREATE_TASK: `${API_BASE_URL}/assignment/post`
+    USER: './test/user.json'
 };
 
 let appState = {
     tasks: [],
     settings: {},
-    user: {},
-    categories: []
+    user: {}
 };
 
-// Helper for authenticated requests
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem('token');
-    const headers = {
-        ...options.headers,
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Don't set Content-Type if it's FormData (let browser handle it)
-    if (!(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-    }
-
-    const response = await fetch(url, { ...options, headers });
-    
-    if (response.status === 401) {
-        console.warn('Unauthorized: Redirecting to login or showing alert.');
-        // Optional: window.location.href = '/login'; 
-    }
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        throw new Error(error.detail || response.statusText);
-    }
-
-    return response.json();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSidebar('home');
     initUI();
     loadApp();
 });
 
 function initUI() {
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('overlay');
-    
+
     // Add Task Sidebar Elements
     const btnOpenAddTask = document.getElementById('btnOpenAddTask');
     const btnCloseAddTask = document.getElementById('btnCloseAddTask');
     const addTaskSidebar = document.getElementById('addTaskSidebar');
-
-    // Sidebar Toggle
-    toggleBtn.addEventListener('click', () => {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            sidebar.classList.toggle('sidebar--active');
-            overlay.classList.toggle('overlay--active');
-        } else {
-            sidebar.classList.toggle('sidebar--expanded');
-        }
-    });
 
     // Add Task Sidebar Toggle
     if (btnOpenAddTask) {
@@ -99,7 +52,6 @@ function initUI() {
     }
 
     overlay.addEventListener('click', () => {
-        sidebar.classList.remove('sidebar--active');
         if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
         overlay.classList.remove('overlay--active');
     });
@@ -118,19 +70,20 @@ function initUI() {
     const btnNewTag = document.getElementById('btnNewTag');
     const tagSelector = document.getElementById('tagSelector');
     if (btnNewTag && tagSelector) {
-        btnNewTag.addEventListener('click', async () => {
+        btnNewTag.addEventListener('click', () => {
             const tagName = prompt("Enter new tag name:");
             if (tagName && tagName.trim() !== '') {
-                try {
-                    const newCat = await apiFetch(API_CONFIG.CATEGORIES.replace('/get', '/post'), {
-                        method: 'POST',
-                        body: JSON.stringify({ category_name: tagName.trim(), color_code: '#888888' })
-                    });
-                    appState.categories.push(newCat);
-                    renderCategories();
-                } catch (error) {
-                    alert('Error creating tag: ' + error.message);
-                }
+                const newTag = document.createElement('span');
+                newTag.className = `tag tag--custom tag--selectable selected`;
+                newTag.textContent = tagName.trim();
+                
+                // Generate a random pastel color for the tag
+                const hue = Math.floor(Math.random() * 360);
+                newTag.style.backgroundColor = `hsla(${hue}, 80%, 60%, 0.15)`;
+                newTag.style.color = `hsl(${hue}, 70%, 40%)`;
+                
+                tagSelector.appendChild(newTag);
+                bindTagClick(newTag);
             }
         });
     }
@@ -155,7 +108,7 @@ function initUI() {
     // Submit New Task Logic
     const btnSubmitTask = document.getElementById('btnSubmitTask');
     if (btnSubmitTask) {
-        btnSubmitTask.addEventListener('click', async () => {
+        btnSubmitTask.addEventListener('click', () => {
             const name = document.getElementById('inputTaskName').value;
             const date = document.getElementById('inputTaskDate').value;
             const note = document.getElementById('inputTaskNote').value;
@@ -165,60 +118,35 @@ function initUI() {
                 return;
             }
 
-            const selectedTagNames = Array.from(document.querySelectorAll('.tag-selector .tag--selectable.selected'))
+            const selectedTags = Array.from(document.querySelectorAll('.tag-selector .tag--selectable.selected'))
                 .map(tag => tag.textContent.trim());
             
-            const category_ids = appState.categories
-                .filter(cat => selectedTagNames.includes(cat.category_name))
-                .map(cat => cat.category_id);
-
-            // Backend expects status as string
-            const newTaskData = {
+            const newTask = {
+                id: Date.now(),
                 title: name,
                 description: note,
-                deadline: date ? `${date}T23:59:59Z` : new Date().toISOString(),
-                status: 'pending',
-                priority: 1,
-                category_ids: category_ids
+                deadline: date || new Date().toISOString().split('T')[0],
+                status_id: 0,
+                tags: selectedTags
             };
 
-            try {
-                const createdTask = await apiFetch(API_CONFIG.CREATE_TASK, {
-                    method: 'POST',
-                    body: JSON.stringify(newTaskData)
-                });
+            appState.tasks.push(newTask);
+            renderTasks();
+            updateStats();
 
-                // Handle file upload if present
-                if (fileInput.files.length > 0) {
-                    const formData = new FormData();
-                    formData.append('task_id', createdTask.task_id.toString());
-                    formData.append('file', fileInput.files[0]);
-
-                    await apiFetch(API_CONFIG.UPLOAD, {
-                        method: 'POST',
-                        body: formData
-                    });
-                }
-
-                // Refresh app state
-                await loadApp();
-
-                // Reset form
-                document.getElementById('inputTaskName').value = '';
-                document.getElementById('inputTaskDate').value = '';
-                document.getElementById('inputTaskNote').value = '';
-                if (fileInput) fileInput.value = '';
-                if (uploadText) uploadText.textContent = 'อัปโหลดไฟล์';
-                document.querySelectorAll('.tag-selector .tag--selectable.selected').forEach(tag => {
-                    tag.classList.remove('selected');
-                });
-                
-                // Close sidebar
-                if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
-                overlay.classList.remove('overlay--active');
-            } catch (error) {
-                alert('Failed to create task: ' + error.message);
-            }
+            // Reset form
+            document.getElementById('inputTaskName').value = '';
+            document.getElementById('inputTaskDate').value = '';
+            document.getElementById('inputTaskNote').value = '';
+            if (fileInput) fileInput.value = '';
+            if (uploadText) uploadText.textContent = 'อัปโหลดไฟล์';
+            document.querySelectorAll('.tag-selector .tag--selectable.selected').forEach(tag => {
+                tag.classList.remove('selected');
+            });
+            
+            // Close sidebar
+            if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
+            overlay.classList.remove('overlay--active');
         });
     }
 
@@ -226,16 +154,6 @@ function initUI() {
     setupCollapsible('toggleBacklog', 'listBacklog');
     setupCollapsible('toggleDoing', 'listDoing');
     setupCollapsible('toggleCompleted', 'listCompleted');
-
-    // Logout logic
-    const btnLogout = document.getElementById('btnLogout');
-    if (btnLogout) {
-        btnLogout.addEventListener('click', (e) => {
-            e.preventDefault();
-            localStorage.removeItem('token');
-            window.location.reload(); // Or redirect to login
-        });
-    }
 }
 
 function setupCollapsible(headerId, listId) {
@@ -252,37 +170,22 @@ function setupCollapsible(headerId, listId) {
 
 async function loadApp() {
     try {
-        // Fetch settings locally, but user/tasks from API
-        const settingsRes = await fetch(API_CONFIG.SETTINGS);
-        appState.settings = await settingsRes.json();
-
-        const [user, tasks, categories] = await Promise.all([
-            apiFetch(API_CONFIG.USER),
-            apiFetch(API_CONFIG.DASHBOARD),
-            apiFetch(API_CONFIG.CATEGORIES)
+        const [settingsRes, dataRes, userRes] = await Promise.all([
+            fetch(API_CONFIG.SETTINGS),
+            fetch(API_CONFIG.DASHBOARD),
+            fetch(API_CONFIG.USER)
         ]);
 
-        appState.user = user;
-        // Map backend tasks to frontend expectations
-        appState.tasks = tasks.map(t => ({
-            id: t.task_id,
-            title: t.title,
-            description: t.description,
-            deadline: t.deadline,
-            status_id: t.status === 'completed' ? 2 : (t.status === 'doing' ? 1 : 0),
-            tags: t.categories.map(c => c.category_name)
-        }));
-        appState.categories = categories;
+        appState.settings = await settingsRes.json();
+        appState.user = await userRes.json();
+        const data = await dataRes.json();
+        appState.tasks = data.tasks;
 
         renderUI();
-        renderCategories();
         updateStats();
         renderTasks();
     } catch (error) {
         console.error('Initialization error:', error);
-        if (error.message.includes('Not authenticated')) {
-            alert('Please login first! (Set "token" in localStorage)');
-        }
     }
 }
 
@@ -294,7 +197,7 @@ function renderUI() {
     document.getElementById('boardHeader').textContent = ui.dashboard_header;
     
     // Greeting
-    document.getElementById('userName').textContent = `${ui.welcome_prefix} ${user.name || user.username}!`;
+    document.getElementById('userName').textContent = `Hello, ${user.name}!`;
     
     // Avatar handling
     const imgAvatar = document.getElementById('imgAvatar');
@@ -305,26 +208,10 @@ function renderUI() {
         imgAvatar.style.display = 'block';
         textAvatar.style.display = 'none';
     } else if (textAvatar) {
-        textAvatar.textContent = (user.name || user.username || "??").substring(0, 2).toUpperCase();
+        textAvatar.textContent = user.initials || "RN";
         if (imgAvatar) imgAvatar.style.display = 'none';
         textAvatar.style.display = 'block';
     }
-}
-
-function renderCategories() {
-    const tagSelector = document.getElementById('tagSelector');
-    if (!tagSelector) return;
-
-    tagSelector.innerHTML = '';
-    appState.categories.forEach(cat => {
-        const span = document.createElement('span');
-        span.className = 'tag tag--selectable';
-        span.textContent = cat.category_name;
-        span.addEventListener('click', () => {
-            span.classList.toggle('selected');
-        });
-        tagSelector.appendChild(span);
-    });
 }
 
 function updateStats() {
@@ -375,7 +262,7 @@ function createTaskCard(task) {
     const clone = template.content.cloneNode(true);
     const card = clone.querySelector('.task-card');
     
-    // Status Circle
+    // Status Circle (Select with no visible text)
     const select = card.querySelector('.status-dropdown');
     select.value = task.status_id;
     select.setAttribute('data-status', task.status_id); 
@@ -383,7 +270,7 @@ function createTaskCard(task) {
         handleStatusChange(task.id, parseInt(e.target.value));
     });
 
-    // Content
+    // Horizontal Layout matching image 7.png
     const content = card.querySelector('.task-card__content');
     content.innerHTML = `
         <div class="task-card__info">
@@ -400,34 +287,16 @@ function createTaskCard(task) {
     return card;
 }
 
-async function handleStatusChange(taskId, newStatusId) {
-    const statusMap = {
-        0: 'pending',
-        1: 'doing',
-        2: 'completed'
-    };
-
-    try {
-        await apiFetch(API_CONFIG.UPDATE_TASK(taskId), {
-            method: 'PATCH',
-            body: JSON.stringify({ status: statusMap[newStatusId] })
-        });
-
-        // Update local state and re-render
-        const taskIndex = appState.tasks.findIndex(t => t.id === taskId);
-        if (taskIndex !== -1) {
-            appState.tasks[taskIndex].status_id = newStatusId;
-            updateStats();
-            renderTasks();
-        }
-    } catch (error) {
-        alert('Failed to update status: ' + error.message);
+function handleStatusChange(taskId, newStatusId) {
+    const taskIndex = appState.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex !== -1) {
+        appState.tasks[taskIndex].status_id = newStatusId;
+        updateStats();
+        renderTasks();
     }
 }
 
 function formatDate(dateString) {
-    if (!dateString) return '';
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('th-TH', options);
 }
-
