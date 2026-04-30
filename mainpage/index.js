@@ -2,6 +2,8 @@
  * Smart Academic Planner - Final Polish
  */
 
+import { loadSidebar } from './sidebar.js';
+
 const API_CONFIG = {
     DASHBOARD: './test/data.json',
     SETTINGS: './test/settings.json',
@@ -14,31 +16,19 @@ let appState = {
     user: {}
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSidebar('home');
     initUI();
     loadApp();
 });
 
 function initUI() {
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('overlay');
-    
+
     // Add Task Sidebar Elements
     const btnOpenAddTask = document.getElementById('btnOpenAddTask');
     const btnCloseAddTask = document.getElementById('btnCloseAddTask');
     const addTaskSidebar = document.getElementById('addTaskSidebar');
-
-    // Sidebar Toggle
-    toggleBtn.addEventListener('click', () => {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            sidebar.classList.toggle('sidebar--active');
-            overlay.classList.toggle('overlay--active');
-        } else {
-            sidebar.classList.toggle('sidebar--expanded');
-        }
-    });
 
     // Add Task Sidebar Toggle
     if (btnOpenAddTask) {
@@ -62,7 +52,6 @@ function initUI() {
     }
 
     overlay.addEventListener('click', () => {
-        sidebar.classList.remove('sidebar--active');
         if (addTaskSidebar) addTaskSidebar.classList.remove('add-task-sidebar--open');
         overlay.classList.remove('overlay--active');
     });

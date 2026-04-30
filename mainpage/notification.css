@@ -1,0 +1,173 @@
+/* Notification Page Styles */
+.notification-container {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+}
+
+.notification-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.notification-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Sections */
+.noti-section {
+    margin-bottom: 28px;
+}
+
+.noti-section:last-child {
+    margin-bottom: 0;
+}
+
+.noti-section__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.noti-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.noti-dot--urgent { background-color: var(--danger); }
+.noti-dot--soon   { background-color: var(--warning); }
+.noti-dot--later  { background-color: #9e9e9e; }
+
+.noti-section__label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.noti-section__label--urgent { color: var(--danger); }
+.noti-section__label--soon   { color: var(--warning); }
+
+.noti-section__sub {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+/* Cards */
+.noti-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.noti-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 14px 20px;
+    transition: box-shadow 0.2s;
+}
+
+.noti-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.noti-card--urgent { border-left-color: var(--danger); }
+.noti-card--soon   { border-left-color: var(--warning); }
+.noti-card--later  { border-left-color: #e0e0e0; }
+
+.noti-card__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 3px;
+}
+
+.noti-card__date {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+/* Status Badges */
+.noti-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.noti-badge--pending {
+    color: var(--danger);
+    background-color: rgba(255, 92, 92, 0.12);
+}
+
+.noti-badge--doing {
+    color: var(--accent);
+    background-color: var(--accent-light);
+}
+
+.noti-badge--done {
+    color: var(--success);
+    background-color: rgba(39, 174, 96, 0.12);
+}
+
+/* Role Switcher */
+.role-switcher {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #eeeef4;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.role-label {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    padding: 0 4px 0 6px;
+    white-space: nowrap;
+}
+
+.role-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.role-btn--active {
+    background-color: var(--accent);
+    color: white;
+    font-weight: 600;
+}
+
+.role-btn:hover:not(.role-btn--active) {
+    background-color: rgba(0, 0, 0, 0.06);
+}

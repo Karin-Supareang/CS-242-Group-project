@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification - vFAST</title>
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="notification.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="light-theme">
+    <div class="layout">
+        <div id="sidebar-placeholder"></div>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 class="page-title">Notification</h1>
+                <div class="user-info">
+                    <div class="role-switcher">
+                        <span class="role-label">Role:</span>
+                        <button class="role-btn" id="roleTeacher">อาจารย์</button>
+                        <button class="role-btn role-btn--active" id="roleStudent">นักศึกษา</button>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">
+                        <img src="" alt="Profile" id="imgAvatar" style="display:none;">
+                        <span id="textAvatar">..</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="notification-container">
+                <div class="notification-header">
+                    <div>
+                        <h2 class="notification-title">Notification</h2>
+                        <p class="notification-subtitle">อย่าลืมทำงานที่ได้รับมอบหมาย!</p>
+                    </div>
+                    <select class="sort-select" id="filterSelect">
+                        <option value="all">แสดงทั้งหมด</option>
+                        <option value="pending">ยังไม่ส่ง</option>
+                        <option value="doing">กำลังทำ</option>
+                        <option value="done">ส่งแล้ว</option>
+                    </select>
+                </div>
+
+                <section class="noti-section" id="sectionUrgent">
+                    <div class="noti-section__header">
+                        <span class="noti-dot noti-dot--urgent"></span>
+                        <span class="noti-section__label noti-section__label--urgent">URGENT</span>
+                        <span class="noti-section__sub">— ภายใน 3 วัน</span>
+                    </div>
+                    <div class="noti-list" id="listUrgent"></div>
+                </section>
+
+                <section class="noti-section" id="sectionSoon">
+                    <div class="noti-section__header">
+                        <span class="noti-dot noti-dot--soon"></span>
+                        <span class="noti-section__label noti-section__label--soon">SOON</span>
+                        <span class="noti-section__sub">— ภายใน 1 สัปดาห์</span>
+                    </div>
+                    <div class="noti-list" id="listSoon"></div>
+                </section>
+
+                <section class="noti-section" id="sectionLater">
+                    <div class="noti-section__header">
+                        <span class="noti-dot noti-dot--later"></span>
+                        <span class="noti-section__label noti-section__label--later">LATER</span>
+                    </div>
+                    <div class="noti-list" id="listLater"></div>
+                </section>
+            </div>
+        </main>
+
+        <div class="overlay" id="overlay" aria-hidden="true"></div>
+    </div>
+
+    <script src="notification.js" type="module"></script>
+</body>
+</html>
