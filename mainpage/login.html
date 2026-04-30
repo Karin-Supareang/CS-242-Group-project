@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vFAST - Login & Register</title>
     <link rel="stylesheet" href="login.css">
+    <!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
 </head>
 <body>
     <div class="login-container">
@@ -31,8 +32,16 @@
                 <br>
                 <!-- Google Login Button -->
                 <div class="google-login-wrapper">
-                    <button type="button" class="submit-btn" style="background-color: #4285F4;" onclick="handleGoogleLogin()">
-                        Login with Google
+                    <!-- คอมเมนต์ส่วนของปุ่ม Google เดิมเอาไว้
+                    <div id="g_id_onload"
+                         data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                         data-callback="handleGoogleLogin">
+                    </div>
+                    <div class="g_id_signin" data-type="standard" data-width="100%"></div>
+                    -->
+                    <button type="button" onclick="handleGoogleLogin()" style="width: 100%; background-color: #fff; color: #3c4043; border: 1px solid #dadce0; border-radius: 4px; padding: 8px 16px; font-size: 14px; font-weight: 500; font-family: 'Roboto', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3); transition: background-color .218s ease; height: 40px;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px; margin-right: 10px;">
+                        Sign in with Google
                     </button>
                 </div>
 
@@ -46,20 +55,20 @@
                     <div class="name-row">
                         <div class="input-group">
                             <label>ชื่อ</label>
-                            <input type="text" placeholder="ชื่อจริง" required>
+                            <input type="text" id="regFirstName" placeholder="ชื่อจริง" required>
                         </div>
                         <div class="input-group">
                             <label>นามสกุล</label>
-                            <input type="text" placeholder="นามสกุล" required>
+                            <input type="text" id="regLastName" placeholder="นามสกุล" required>
                         </div>
                     </div>
                     <div class="input-group">
                         <label>Email</label>
-                        <input type="email" placeholder="example@university.ac.th" required>
+                        <input type="email" id="regEmail" placeholder="example@university.ac.th" required>
                     </div>
                     <div class="input-group">
                         <label>Password</label>
-                        <input type="password" placeholder="********" required>
+                        <input type="password" id="regPassword" placeholder="********" required>
                     </div>
                     <button type="submit" class="submit-btn">ลงทะเบียน</button>
                 </form>
