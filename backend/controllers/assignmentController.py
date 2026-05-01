@@ -78,13 +78,17 @@ async def upload_assignment_file(
             if estimated_time is not None:
                 update_fields["estimated_time"] = estimated_time
                 
-        extracted_deadline = manager.extract_deadline_from_file(file_content, file.content_type)
-        if extracted_deadline is not None:
-            update_fields["deadline"] = extracted_deadline
-            
-        extracted_title = manager.extract_title_from_file(file_content, file.content_type)
-        if extracted_title is not None:
-            update_fields["title"] = extracted_title
+        # เช็กก่อนว่าถ้าผู้ใช้ระบุกำหนดส่งมาแล้ว จะไม่ให้ AI เขียนทับ
+        if not assignment.deadline:
+            extracted_deadline = manager.extract_deadline_from_file(file_content, file.content_type)
+            if extracted_deadline is not None:
+                update_fields["deadline"] = extracted_deadline
+                
+        # เช็กก่อนว่าถ้าผู้ใช้ตั้งชื่อมาแล้ว (และไม่ได้ปล่อยว่าง) จะไม่ให้ AI เขียนทับ
+        if not assignment.title or assignment.title.strip() == "" or assignment.title.lower() == "untitled":
+            extracted_title = manager.extract_title_from_file(file_content, file.content_type)
+            if extracted_title is not None:
+                update_fields["title"] = extracted_title
             
         if update_fields:
             manager.update_assignment(task_id, user_id, AssignmentUpdate(**update_fields))
