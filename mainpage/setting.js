@@ -273,40 +273,41 @@ function renderProfileTab() {
                     ${avatarUrl ? `<img src="${avatarUrl}" id="profileTabImg" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : 
                     `<span id="profileTabText">${displayName.substring(0, 2).toUpperCase()}</span>`}
                 </div>
-                <input type="file" id="inputAvatarFile" accept="image/*" style="display: none;">
-                <button class="btn-dashed" id="btnEditPicture">Edit picture</button>
+                <!-- <input type="file" id="inputAvatarFile" accept="image/*" style="display: none;"> -->
+                <!-- <button class="btn-dashed" id="btnEditPicture">Edit picture</button> -->
             </div>
             <div class="form-grid">
                 <div class="form-group">
                     <label class="form-label">ชื่อ</label>
-                    <input type="text" class="form-input" id="fieldName" value="${user.name || ''}">
+                    <input type="text" class="form-input" id="fieldName" value="${user.name || ''}" disabled>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Username</label>
-                    <input type="text" class="form-input" id="fieldUsername" value="${user.username || ''}">
+                    <input type="text" class="form-input" id="fieldUsername" value="${user.username || ''}" disabled>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
                     <div class="input-with-btn">
-                        <input type="email" class="form-input" id="fieldEmail" value="${user.email || ''}">
-                        <button class="btn-primary btn-sm">เปลี่ยน</button>
+                        <input type="email" class="form-input" id="fieldEmail" value="${user.email || ''}" disabled>
+                        <!-- <button class="btn-primary btn-sm">เปลี่ยน</button> -->
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
                     <div class="input-with-btn">
                         <input type="password" class="form-input" value="******" disabled>
-                        <button class="btn-primary btn-sm">เปลี่ยน</button>
+                        <!-- <button class="btn-primary btn-sm">เปลี่ยน</button> -->
                     </div>
                 </div>
             </div>
             <div class="actions">
-                <button class="btn-primary" id="btnSaveProfile">บันทึก</button>
-                <button class="btn-danger" id="btnOpenDelete">Delete profile and log out</button>
+                <!-- <button class="btn-primary" id="btnSaveProfile">บันทึก</button> -->
+                <!-- <button class="btn-danger" id="btnOpenDelete">Delete profile and log out</button> -->
             </div>
         `;
 
-        // Profile Picture Logic
+        /*
+        // คอมเมนต์ส่วนของ Profile Picture Logic ชั่วคราว
         const btnEditPicture = document.getElementById('btnEditPicture');
         const inputAvatarFile = document.getElementById('inputAvatarFile');
         const profileTabAvatar = document.getElementById('profileTabAvatar');
@@ -336,7 +337,9 @@ function renderProfileTab() {
                 reader.readAsDataURL(file);
             }
         });
+        */
         
+        /*
         document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
             const newName = document.getElementById('fieldName').value.trim();
             const newUsername = document.getElementById('fieldUsername').value.trim();
@@ -366,8 +369,9 @@ function renderProfileTab() {
                 alert("เกิดข้อผิดพลาด: " + error.message);
             }
         });
+        */
 
-        document.getElementById('btnOpenDelete')?.addEventListener('click', openDeleteModal);
+        // document.getElementById('btnOpenDelete')?.addEventListener('click', openDeleteModal);
         
     }
 }
