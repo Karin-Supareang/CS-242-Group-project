@@ -30,7 +30,8 @@ python3 -m http.server 3000
 ```
 เข้าใช้งานที่: [http://localhost:3000](http://localhost:3000)
 
-
+## เปลี่ยน APP_ENV ใน .env เป็น development เพื่อทดสอบระบบ noti ให้ตรวจสอบและส่งทุก 10 วิ
+## เปลี่ยน APP_ENV ใน .env เป็น development เพื่อทดสอบระบบ noti ให้ตรวจสอบและส่งทุกชม
 
 ## วิธีรับ JWT Token สำหรับทดสอบ (Manual Auth)
 ในระหว่างที่ระบบ Login หน้าเว็บยังไม่สมบูรณ์ สามารถใช้ Token ทดสอบได้ดังนี้:
