@@ -34,8 +34,7 @@ CREATE TABLE assignment (
     percentage INTEGER,
     file_data BYTEA,
     file_name VARCHAR,
-    file_mimetype VARCHAR,
-    google_event_id VARCHAR
+    file_mimetype VARCHAR
 );
 
 -- 5. สร้างตารางเชื่อม (Many-to-Many)

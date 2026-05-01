@@ -336,7 +336,7 @@ function renderProfileTab() {
                 reader.readAsDataURL(file);
             }
         });
-
+        
         document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
             const newName = document.getElementById('fieldName').value.trim();
             const newUsername = document.getElementById('fieldUsername').value.trim();
@@ -368,5 +368,6 @@ function renderProfileTab() {
         });
 
         document.getElementById('btnOpenDelete')?.addEventListener('click', openDeleteModal);
+        
     }
 }
