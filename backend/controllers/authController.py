@@ -106,7 +106,7 @@ oauth.register(
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
-        'scope': 'openid email profile' # ตั้งค่าเริ่มต้นให้ไม่มี Calendar
+        'scope': 'openid email profile'
     }
 )
 

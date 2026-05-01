@@ -11,9 +11,7 @@ CREATE TABLE "user" (
     username VARCHAR UNIQUE,
     name VARCHAR,
     hashed_password VARCHAR,
-    notification BOOLEAN DEFAULT TRUE,
-    google_access_token VARCHAR,
-    google_refresh_token VARCHAR
+    notification BOOLEAN DEFAULT TRUE
 );
 
 -- 3. สร้างตาราง category

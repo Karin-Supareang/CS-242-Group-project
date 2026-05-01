@@ -21,7 +21,7 @@ async def check_deadlines_and_notify():
             
             # ดึง User ทั้งหมดมาจัด Priority (ไม่ว่าจะเปิดแจ้งเตือนหรือมีอีเมลหรือไม่)
             users = db.query(User).all()
-            print(f"\n🔍 [Notification Job] เริ่มรันรอบใหม่เวลา {now.strftime('%H:%M:%S')} - พบ User ทั้งหมด {len(users)} คน")
+            print(f"\n[Notification Job] เริ่มรันรอบใหม่เวลา {now.strftime('%H:%M:%S')} - พบ User ทั้งหมด {len(users)} คน")
             
             email_manager = EmailManager()
 
@@ -58,13 +58,13 @@ async def check_deadlines_and_notify():
                 if user.notification and user.email:
                     for task in active_assignments:
                         if not task.deadline:
-                            print(f"  ⏩ ข้ามงาน '{task.title}' - ไม่มีกำหนดส่ง")
+                            print(f"ข้ามงาน '{task.title}' - ไม่มีกำหนดส่ง")
                             continue
                         
                         display_name = user.name or user.username or user.email.split('@')[0]
                         delta = task.deadline - now
                         hours_left = delta.total_seconds() / 3600.0
-                        print(f"  ⏰ งาน '{task.title}' - เหลือเวลา {hours_left:.2f} ชั่วโมง")
+                        print(f"งาน '{task.title}' - เหลือเวลา {hours_left:.2f} ชั่วโมง")
 
                         subject = None
                         message = None
@@ -84,12 +84,12 @@ async def check_deadlines_and_notify():
                             message = f"สวัสดีคุณ {display_name},\n\nไฟลนก้นแล้ว! งาน '{task.title}' เหลือเวลาอีกแค่ 2 ชั่วโมงสุดท้าย! ปั่นด่วน!"
 
                         if subject and message:
-                            print(f"    ✅ เข้าเงื่อนไขเตือน! กำลังพยายามส่งอีเมล: {subject}")
+                            print(f"เข้าเงื่อนไขเตือน! กำลังพยายามส่งอีเมล: {subject}")
                             await email_manager.send_email(user.email, subject, message)
                         else:
-                            print(f"    ❌ ไม่เข้าเงื่อนไขส่งอีเมล (เวลาที่เหลือไม่อยู่ในช่วง 1-2, 3-4, 5-6 หรือ 23-24 ชม.)")
+                            print(f"ไม่เข้าเงื่อนไขส่งอีเมล (เวลาที่เหลือไม่อยู่ในช่วง 1-2, 3-4, 5-6 หรือ 23-24 ชม.)")
                 else:
-                    print("  ⏩ ข้ามการแจ้งเตือน - User ปิดแจ้งเตือนหรือไม่มีอีเมล")
+                    print("ข้ามการแจ้งเตือน - User ปิดแจ้งเตือนหรือไม่มีอีเมล")
             
             # บันทึกการเปลี่ยนแปลง Priority ของงานทั้งหมดลง Database
             db.commit()
@@ -101,7 +101,7 @@ async def check_deadlines_and_notify():
         
         env = os.getenv("APP_ENV", "production")
         if env == "development":
-            print("✅ [Development Mode] Notification Job ทำงานเสร็จสิ้น รออีก 10 วินาทีเพื่อรันรอบถัดไป...")
+            print("[Development Mode] Notification Job ทำงานเสร็จสิ้น รออีก 10 วินาทีเพื่อรันรอบถัดไป...")
             await asyncio.sleep(10)
         else:
             now_after = datetime.now(thai_tz)

@@ -1,6 +1,7 @@
 import uuid
 import os
 import google.generativeai as genai
+from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from models.assignment import Assignment
@@ -185,6 +186,57 @@ class AssignmentManager:
             return int(response.text.strip())
         except Exception:
             return 0
+
+    # Business logic method (Extract Deadline from File Content with Gemini)
+    def extract_deadline_from_file(self, file_content: bytes, file_mimetype: str) -> datetime | None:
+        """
+        ให้ Gemini หากำหนดส่ง (Deadline) จากไฟล์ที่อัปโหลด ตอบกลับเป็นรูปแบบ ISO 8601
+        """
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return None
+            
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
+        
+        try:
+            prompt = "วิเคราะห์ไฟล์นี้และหา 'กำหนดส่ง' (Deadline หรือ Due Date) ถ้าเจอให้ตอบกลับมาเป็นรูปแบบ ISO 8601 (YYYY-MM-DDTHH:MM:SS) เท่านั้น ห้ามมีข้อความอื่นเจือปน ถ้าหาไม่เจอหรือไม่มีระบุไว้ ให้ตอบว่า 'NONE'"
+            response = model.generate_content([
+                prompt,
+                {"mime_type": file_mimetype, "data": file_content}
+            ])
+            text = response.text.strip()
+            if text == 'NONE' or not text:
+                return None
+            parsed_date = datetime.fromisoformat(text.replace('Z', '+00:00'))
+            return parsed_date.replace(tzinfo=None) # ลบ Timezone ออกเพื่อให้ตรงกับรูปแบบของ Database
+        except Exception:
+            return None
+
+    # Business logic method (Extract Title from File Content with Gemini)
+    def extract_title_from_file(self, file_content: bytes, file_mimetype: str) -> str | None:
+        """
+        ให้ Gemini ตั้งชื่องาน (Title) จากเนื้อหาไฟล์ที่อัปโหลด
+        """
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return None
+            
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
+        
+        try:
+            prompt = "วิเคราะห์ไฟล์นี้และตั้งชื่องาน (Title) ที่เหมาะสมและกระชับที่สุด ความยาวไม่เกิน 50 ตัวอักษร กฎเหล็ก: ตอบกลับมาแค่ชื่องานเท่านั้น ห้ามมีข้อความอื่นเจือปน ถ้าหาหัวข้อไม่ได้จริงๆ ให้ตอบว่า 'NONE'"
+            response = model.generate_content([
+                prompt,
+                {"mime_type": file_mimetype, "data": file_content}
+            ])
+            text = response.text.strip()
+            if text == 'NONE' or not text:
+                return None
+            return text
+        except Exception:
+            return None
 
     # Business logic method (Delete Assignment)
     def delete_assignment(self, task_id: int, user_id: int):

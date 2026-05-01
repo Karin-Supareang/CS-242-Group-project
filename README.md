@@ -30,6 +30,8 @@ python3 -m http.server 3000
 ```
 เข้าใช้งานที่: [http://localhost:3000](http://localhost:3000)
 
+
+
 ## วิธีรับ JWT Token สำหรับทดสอบ (Manual Auth)
 ในระหว่างที่ระบบ Login หน้าเว็บยังไม่สมบูรณ์ สามารถใช้ Token ทดสอบได้ดังนี้:
 1. เข้าไปที่ [http://localhost:8080/docs](http://localhost:8080/docs)

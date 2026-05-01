@@ -71,11 +71,23 @@ async def upload_assignment_file(
         # 3. นำผลที่ได้ไปต่อท้าย description ของ Assignment
         manager.append_summary_to_description(task_id, user_id, ai_analysis)
         
-        # 4. ให้ AI ประเมินเวลาทำงานจากไฟล์ แล้วอัปเดตลง Database (ถ้าผู้ใช้ยังไม่ได้กำหนดเวลาไว้)
+        # 4. ให้ AI ตั้งชื่อ, ประเมินเวลาทำงาน, และหากำหนดส่งจากไฟล์ แล้วอัปเดตลง Database
+        update_fields = {}
         if assignment.estimated_time is None or assignment.estimated_time == 0:
             estimated_time = manager.estimate_time_from_file(file_content, file.content_type)
             if estimated_time is not None:
-                manager.update_assignment(task_id, user_id, AssignmentUpdate(estimated_time=estimated_time))
+                update_fields["estimated_time"] = estimated_time
+                
+        extracted_deadline = manager.extract_deadline_from_file(file_content, file.content_type)
+        if extracted_deadline is not None:
+            update_fields["deadline"] = extracted_deadline
+            
+        extracted_title = manager.extract_title_from_file(file_content, file.content_type)
+        if extracted_title is not None:
+            update_fields["title"] = extracted_title
+            
+        if update_fields:
+            manager.update_assignment(task_id, user_id, AssignmentUpdate(**update_fields))
     
     return {
         "message": "File uploaded successfully",
