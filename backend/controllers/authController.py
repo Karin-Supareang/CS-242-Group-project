@@ -183,3 +183,14 @@ async def update_users_me(
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
     return updated_user
+
+@router.delete("/me", summary="ลบบัญชีผู้ใช้ปัจจุบัน")
+async def delete_current_user(
+    user_id: int = Depends(get_current_user_id),
+    user_manager: UserManager = Depends(get_user_manager)
+):
+    """ลบบัญชีผู้ใช้ที่กำลังล็อกอินอยู่"""
+    success = user_manager.delete_user(user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "ลบบัญชีผู้ใช้เรียบร้อยแล้ว"}

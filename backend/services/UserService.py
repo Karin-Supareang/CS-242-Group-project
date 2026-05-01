@@ -128,6 +128,11 @@ class UserManager:
         if not db_user:
             return None
         
+        if update_data.email is not None and update_data.email.lower() != db_user.email.lower():
+            if self.get_user_by_email(update_data.email):
+                raise HTTPException(status_code=400, detail="Email already registered")
+            db_user.email = update_data.email.lower()
+        
         if update_data.username is not None and update_data.username.lower() != (db_user.username.lower() if db_user.username else ""):
             if self.get_user_by_username(update_data.username):
                 raise HTTPException(status_code=400, detail="Username already taken")
@@ -136,6 +141,21 @@ class UserManager:
         if update_data.name is not None:
             db_user.name = update_data.name
             
+        if update_data.password is not None and update_data.password.strip() != "":
+            db_user.hashed_password = self._get_password_hash(update_data.password)
+            
         self._db.commit()
         self._db.refresh(db_user)
         return db_user
+
+    # Business logic method (Delete User)
+    def delete_user(self, user_id: int) -> bool:
+        """
+        ลบบัญชีผู้ใช้และข้อมูลทั้งหมดที่เชื่อมโยงอยู่ (Cascade Delete)
+        """
+        db_user = self.get_user_by_id(user_id)
+        if not db_user:
+            return False
+        self._db.delete(db_user)
+        self._db.commit()
+        return True

@@ -72,3 +72,5 @@ class UserSignupResponse(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None

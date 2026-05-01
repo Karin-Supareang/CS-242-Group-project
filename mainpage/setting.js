@@ -105,10 +105,30 @@ function closeDeleteModal() {
     }
 }
 
-function confirmDelete() {
-    alert("ระบบกำลังลบข้อมูลและออกจากระบบ...");
-    localStorage.removeItem('token');
-    window.location.href = "login.html";
+async function confirmDelete() {
+    if (!userState.token) {
+        localStorage.removeItem('token');
+        window.location.href = "login.html";
+        return;
+    }
+
+    try {
+        const res = await fetch(API_CONFIG.AUTH_ME, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${userState.token}`
+            }
+        });
+
+        if (!res.ok) throw new Error('ไม่สามารถลบบัญชีได้');
+
+        alert("ลบบัญชีและออกจากระบบเรียบร้อยแล้ว");
+        localStorage.removeItem('token');
+        window.location.href = "login.html";
+    } catch (error) {
+        alert("เกิดข้อผิดพลาด: " + error.message);
+        closeDeleteModal();
+    }
 }
 
 function initUserDropdown() {
@@ -273,41 +293,34 @@ function renderProfileTab() {
                     ${avatarUrl ? `<img src="${avatarUrl}" id="profileTabImg" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : 
                     `<span id="profileTabText">${displayName.substring(0, 2).toUpperCase()}</span>`}
                 </div>
-                <!-- <input type="file" id="inputAvatarFile" accept="image/*" style="display: none;"> -->
-                <!-- <button class="btn-dashed" id="btnEditPicture">Edit picture</button> -->
+                <input type="file" id="inputAvatarFile" accept="image/*" style="display: none;">
+                <button class="btn-dashed" id="btnEditPicture">Edit picture</button>
             </div>
             <div class="form-grid">
                 <div class="form-group">
                     <label class="form-label">ชื่อ</label>
-                    <input type="text" class="form-input" id="fieldName" value="${user.name || ''}" disabled>
+                    <input type="text" class="form-input" id="fieldName" value="${user.name || ''}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Username</label>
-                    <input type="text" class="form-input" id="fieldUsername" value="${user.username || ''}" disabled>
+                    <input type="text" class="form-input" id="fieldUsername" value="${user.username || ''}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <div class="input-with-btn">
-                        <input type="email" class="form-input" id="fieldEmail" value="${user.email || ''}" disabled>
-                        <!-- <button class="btn-primary btn-sm">เปลี่ยน</button> -->
-                    </div>
+                    <input type="email" class="form-input" id="fieldEmail" value="${user.email || ''}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <div class="input-with-btn">
-                        <input type="password" class="form-input" value="******" disabled>
-                        <!-- <button class="btn-primary btn-sm">เปลี่ยน</button> -->
-                    </div>
+                    <input type="password" class="form-input" id="fieldPassword" placeholder="ปล่อยว่างไว้ถ้าไม่ต้องการเปลี่ยนรหัสผ่าน">
                 </div>
             </div>
             <div class="actions">
-                <!-- <button class="btn-primary" id="btnSaveProfile">บันทึก</button> -->
-                <!-- <button class="btn-danger" id="btnOpenDelete">Delete profile and log out</button> -->
+                <button class="btn-primary" id="btnSaveProfile">บันทึก</button>
+                <button class="btn-danger" id="btnOpenDelete">Delete profile and log out</button>
             </div>
         `;
 
-        /*
-        // คอมเมนต์ส่วนของ Profile Picture Logic ชั่วคราว
+        // Profile Picture Logic
         const btnEditPicture = document.getElementById('btnEditPicture');
         const inputAvatarFile = document.getElementById('inputAvatarFile');
         const profileTabAvatar = document.getElementById('profileTabAvatar');
@@ -337,12 +350,26 @@ function renderProfileTab() {
                 reader.readAsDataURL(file);
             }
         });
-        */
         
-        /*
         document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
             const newName = document.getElementById('fieldName').value.trim();
             const newUsername = document.getElementById('fieldUsername').value.trim();
+            const newEmail = document.getElementById('fieldEmail').value.trim();
+            const newPassword = document.getElementById('fieldPassword').value.trim();
+
+            if (!newEmail) {
+                alert("อีเมลไม่สามารถเว้นว่างได้");
+                return;
+            }
+
+            const payload = { 
+                name: newName || null, 
+                username: newUsername || null,
+                email: newEmail
+            };
+            if (newPassword) {
+                payload.password = newPassword;
+            }
 
             try {
                 const res = await fetch(API_CONFIG.AUTH_ME, {
@@ -351,10 +378,7 @@ function renderProfileTab() {
                         'Authorization': `Bearer ${userState.token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ 
-                        name: newName || null, 
-                        username: newUsername || null 
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!res.ok) {
@@ -364,14 +388,16 @@ function renderProfileTab() {
 
                 userState.data = await res.json();
                 alert("บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว!");
+                if (newPassword) {
+                    document.getElementById('fieldPassword').value = '';
+                }
                 renderHeader(); // อัปเดตชื่อที่มุมขวาบนให้เปลี่ยนทันที
             } catch (error) {
                 alert("เกิดข้อผิดพลาด: " + error.message);
             }
         });
-        */
 
-        // document.getElementById('btnOpenDelete')?.addEventListener('click', openDeleteModal);
+        document.getElementById('btnOpenDelete')?.addEventListener('click', openDeleteModal);
         
     }
 }
